@@ -107,11 +107,16 @@
       </div>
 
       <div class="form-group">
-        <label>장소명 또는 주소 검색</label>
+        <label>도로명 주소 검색</label>
         <div class="search-box">
-          <input type="text" id="input-name" class="form-control" placeholder="예: 제주신라호텔, 성산일출봉" onkeypress="if(event.keyCode==13) searchLocation()">
-          <button type="button" class="btn-search" onclick="searchLocation()">🔍 검색</button>
+          <input type="text" id="input-address" class="form-control" placeholder="버튼을 눌러 주소를 검색하세요" readonly>
+          <button type="button" class="btn-search" onclick="openAddressSearch()">🏠 주소 검색</button>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label>장소/상호명 (목록에 표시될 이름)</label>
+        <input type="text" id="input-name" class="form-control" placeholder="예: 숙성도 중문점, 카페 댚">
       </div>
 
       <div class="form-group" id="group-rating">
@@ -142,11 +147,11 @@
       <div style="display: flex; gap: 5px;">
         <div class="form-group" style="flex:1;">
           <label>위도 (Lat)</label>
-          <input type="text" id="input-lat" class="form-control" placeholder="지도 클릭/검색 시 자동입력" readonly>
+          <input type="text" id="input-lat" class="form-control" placeholder="자동 입력됨" readonly>
         </div>
         <div class="form-group" style="flex:1;">
           <label>경도 (Lng)</label>
-          <input type="text" id="input-lng" class="form-control" placeholder="지도 클릭/검색 시 자동입력" readonly>
+          <input type="text" id="input-lng" class="form-control" placeholder="자동 입력됨" readonly>
         </div>
       </div>
 
@@ -158,6 +163,9 @@
 
   <!-- Leaflet 지도 라이브러리 -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- 카카오 공식 도로명주소 검색 서비스 API (API 키 불필요) -->
+  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 
   <!-- Firebase 실시간 DB 라이브러리 -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -199,6 +207,35 @@
       listenRealtimeData();
     }
 
+    // 도로명 주소 검색 (우편번호 서비스 팝업)
+    function openAddressSearch() {
+      new daum.Postcode({
+        oncomplete: function(data) {
+          const fullAddress = data.address;
+          document.getElementById('input-address').value = fullAddress;
+          
+          if (!document.getElementById('input-name').value) {
+            document.getElementById('input-name').value = data.buildingName || fullAddress;
+          }
+
+          // 주소를 좌표(위도, 경도)로 변환하는 변환 엔진 호출
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`)
+            .then(res => res.json())
+            .then(results => {
+              if (results && results.length > 0) {
+                const lat = parseFloat(results[0].lat);
+                const lng = parseFloat(results[0].lon);
+                setCoordinates(lat, lng);
+                map.flyTo([lat, lng], 15);
+              } else {
+                alert('주소 위치 정보 변환에 실패했습니다. 지도를 클릭해서 위치를 찍어주세요.');
+              }
+            })
+            .catch(() => alert('위치 정보를 불러오지 못했습니다. 지도를 직접 클릭해 지정하세요.'));
+        }
+      }).open();
+    }
+
     function listenRealtimeData() {
       db.ref('jeju_trip_data').on('value', (snapshot) => {
         const data = snapshot.val() || {};
@@ -229,31 +266,6 @@
         iconSize: [32, 32],
         iconAnchor: [16, 16]
       });
-    }
-
-    // 오픈 장소 검색 엔진 (오류 없는 대체 검색 기능)
-    function searchLocation() {
-      const keyword = document.getElementById('input-name').value;
-      if (!keyword.trim()) return alert('검색어를 입력해주세요.');
-
-      const query = keyword.includes('제주') ? keyword : `제주 ${keyword}`;
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
-
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.length > 0) {
-            const result = data[0];
-            const lat = parseFloat(result.lat);
-            const lng = parseFloat(result.lon);
-            
-            setCoordinates(lat, lng);
-            map.flyTo([lat, lng], 14);
-          } else {
-            alert('장소를 찾을 수 없습니다. 지도를 직접 클릭하여 위치를 지정해주세요.');
-          }
-        })
-        .catch(() => alert('검색 중 오류가 발생했습니다. 지도를 클릭해서 위치를 지정해보세요.'));
     }
 
     function setCoordinates(lat, lng) {
@@ -338,7 +350,7 @@
       const lat = parseFloat(document.getElementById('input-lat').value);
       const lng = parseFloat(document.getElementById('input-lng').value);
 
-      if (!name || isNaN(lat) || isNaN(lng)) return alert('위치를 설정해주세요!');
+      if (!name || isNaN(lat) || isNaN(lng)) return alert('장소명과 주소/위치를 등록해주세요!');
 
       if (category === '숙소') {
         db.ref('jeju_trip_data/hotel').set({ name, lat, lng });
