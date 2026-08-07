@@ -156,28 +156,28 @@
 
   <div id="map"></div>
 
-  <!-- Leaflet & Kakao API -->
+  <!-- Leaflet 지도 라이브러리 -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Kakao 장소 검색 API -->
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase 실시간 DB 라이브러리 -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
   <script>
-    // ----------------------------------------------------
-    // [이 부분에 본인의 Firebase 정보를 채워 넣어주세요]
-    // ----------------------------------------------------
-const firebaseConfig = {
-  apiKey: "AIzaSyCqzu-A6-woxTIStlwXOXk3N5hT0WrVa14",
-  authDomain: "jeju-trip-3dd23.firebaseapp.com",
-  databaseURL: "https://jeju-trip-3dd23-default-rtdb.firebaseio.com",
-  projectId: "jeju-trip-3dd23",
-  storageBucket: "jeju-trip-3dd23.firebasestorage.app",
-  messagingSenderId: "647159148234",
-  appId: "1:647159148234:web:1780f7619ed3cc1a2a4e33",
-  measurementId: "G-9E3M0372M6"
-};
+    // Firebase 설정
+    const firebaseConfig = {
+      apiKey: "AIzaSyCqzu-A6-woxTIStlwXOXk3N5hT0WrVa14",
+      authDomain: "jeju-trip-3dd23.firebaseapp.com",
+      databaseURL: "https://jeju-trip-3dd23-default-rtdb.firebaseio.com",
+      projectId: "jeju-trip-3dd23",
+      storageBucket: "jeju-trip-3dd23.firebasestorage.app",
+      messagingSenderId: "647159148234",
+      appId: "1:647159148234:web:1780f7619ed3cc1a2a4e33",
+      measurementId: "G-9E3M0372M6"
+    };
 
     // Firebase 초기화
     firebase.initializeApp(firebaseConfig);
