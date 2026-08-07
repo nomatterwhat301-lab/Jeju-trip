@@ -68,7 +68,7 @@
     .pin-카페 { background-color: #8b4513; }
     .pin-관광지 { background-color: #007bff; }
 
-    #map { flex: 1; height: 100%; }
+    #map { flex: 1; height: 100vh; width: 100%; z-index: 1; }
   </style>
 </head>
 <body>
@@ -160,14 +160,13 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- Kakao 장소 검색 API -->
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services&autoload=false"></script>
 
   <!-- Firebase 실시간 DB 라이브러리 -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
   <script>
-    // Firebase 설정
     const firebaseConfig = {
       apiKey: "AIzaSyCqzu-A6-woxTIStlwXOXk3N5hT0WrVa14",
       authDomain: "jeju-trip-3dd23.firebaseapp.com",
@@ -179,7 +178,6 @@
       measurementId: "G-9E3M0372M6"
     };
 
-    // Firebase 초기화
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -188,8 +186,7 @@
     let accommodation = null;
     let places = [];
     let currentCategory = '전체';
-
-    const ps = new kakao.maps.services.Places();
+    let ps = null;
 
     function initMap() {
       map = L.map('map').setView([33.3617, 126.5292], 10);
@@ -203,10 +200,16 @@
         switchTab('add');
       });
 
+      // 카카오 SDK 로드 완료 후 검색 객체 생성
+      if (window.kakao && window.kakao.maps) {
+        kakao.maps.load(function() {
+          ps = new kakao.maps.services.Places();
+        });
+      }
+
       listenRealtimeData();
     }
 
-    // Firebase 실시간 데이터 구독
     function listenRealtimeData() {
       db.ref('jeju_trip_data').on('value', (snapshot) => {
         const data = snapshot.val() || {};
@@ -243,8 +246,22 @@
       const keyword = document.getElementById('input-name').value;
       if (!keyword.trim()) return alert('검색어를 입력해주세요.');
 
-      const query = keyword.includes('제주') ? keyword : `제주 ${keyword}`;
+      if (!ps) {
+        if (window.kakao && window.kakao.maps) {
+          kakao.maps.load(function() {
+            ps = new kakao.maps.services.Places();
+            executeSearch(keyword);
+          });
+        } else {
+          alert('카카오 지도 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        }
+      } else {
+        executeSearch(keyword);
+      }
+    }
 
+    function executeSearch(keyword) {
+      const query = keyword.includes('제주') ? keyword : `제주 ${keyword}`;
       ps.keywordSearch(query, function(data, status) {
         if (status === kakao.maps.services.Status.OK) {
           const first = data[0];
