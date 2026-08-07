@@ -159,8 +159,8 @@
   <!-- Leaflet 지도 라이브러리 -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Kakao 장소 검색 API -->
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services&autoload=false"></script>
+  <!-- Kakao 장소 검색 API (자동 로드 설정) -->
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
 
   <!-- Firebase 실시간 DB 라이브러리 -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -200,11 +200,9 @@
         switchTab('add');
       });
 
-      // 카카오 SDK 로드 완료 후 검색 객체 생성
-      if (window.kakao && window.kakao.maps) {
-        kakao.maps.load(function() {
-          ps = new kakao.maps.services.Places();
-        });
+      // Kakao 서비스 객체 안전 초기화
+      if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
+        ps = new kakao.maps.services.Places();
       }
 
       listenRealtimeData();
@@ -247,20 +245,13 @@
       if (!keyword.trim()) return alert('검색어를 입력해주세요.');
 
       if (!ps) {
-        if (window.kakao && window.kakao.maps) {
-          kakao.maps.load(function() {
-            ps = new kakao.maps.services.Places();
-            executeSearch(keyword);
-          });
+        if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
+          ps = new kakao.maps.services.Places();
         } else {
-          alert('카카오 지도 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+          return alert('카카오 지도 서비스가 아직 로드되지 않았습니다. 페이지를 새로고침 해보세요.');
         }
-      } else {
-        executeSearch(keyword);
       }
-    }
 
-    function executeSearch(keyword) {
       const query = keyword.includes('제주') ? keyword : `제주 ${keyword}`;
       ps.keywordSearch(query, function(data, status) {
         if (status === kakao.maps.services.Status.OK) {
