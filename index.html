@@ -387,7 +387,6 @@ function render(){
   const picks=pickArr.map(s=>`<span class="pick">❤️ ${escapeHtml(s)}</span>`).join("");
   const card=document.createElement("div");card.className="place-card";
   card.onclick=e=>{if(e.target.tagName!=="BUTTON")map.flyTo([p.lat,p.lng],16)};
-  const pickArr=Array.isArray(p.picks)?p.picks:String(p.picks||"").split(",").map(s=>s.trim()).filter(Boolean):[];
   card.innerHTML=`<span class="badge badge-${p.category}">${p.category}</span>
    <button class="edit" onclick="event.stopPropagation();editPlace('${p.key}')">수정</button>
    <button class="delete" onclick="event.stopPropagation();deletePlace('${p.key}')">삭제</button>
