@@ -18,7 +18,7 @@ body{display:flex;height:100vh;overflow:hidden;background:#f7f8fa;color:#212529}
 .searchrow{display:flex;gap:6px}.searchrow .input{flex:1}.btn{border:0;border-radius:6px;padding:9px 11px;cursor:pointer;font-weight:700}.btn-search{background:#495057;color:#fff}.btn-green{background:#087f5b;color:#fff}.btn-gray{background:#e9ecef;color:#343a40}.btn-danger{background:#e03131;color:#fff}
 .search-results{margin-top:8px}.search-result{border:1px solid #dee2e6;border-radius:7px;padding:9px;margin-bottom:6px;background:#fff}.search-result:hover{border-color:#087f5b;background:#f4fbf8}.search-result b{display:block;font-size:13px;margin-bottom:3px}.search-result small{display:block;color:#6c757d;line-height:1.4}.search-result button{margin-top:6px;width:100%;padding:6px;border:0;border-radius:5px;background:#087f5b;color:#fff;font-weight:700;cursor:pointer;font-size:12px}
 .place-card{background:#fff;border:1px solid #e1e5e8;border-radius:9px;padding:11px 12px;margin-bottom:9px;cursor:pointer;position:relative}.place-card:hover{border-color:#087f5b}.badge{display:inline-block;padding:3px 7px;border-radius:12px;color:#fff;font-size:10px;font-weight:700;margin-bottom:5px}.badge-음식점{background:#845ef7}.badge-카페{background:#a0612b}.badge-관광지{background:#228be6}.badge-숙소{background:#e64980}
-.title{font-size:14px;font-weight:700;padding-right:50px}.rating{color:#f59f00}.meta{font-size:11px;color:#6c757d;line-height:1.55;margin-top:5px}.pick{display:inline-block;background:#fff3bf;color:#8d6b00;border-radius:10px;padding:2px 6px;margin:2px 2px 0 0;font-size:10px;font-weight:700}.distance{margin-top:7px;background:#e7f5ff;color:#1971c2;padding:5px;border-radius:5px;font-size:11px;font-weight:700;text-align:center}.delete{position:absolute;right:9px;top:9px;border:0;background:#ffe3e3;color:#c92a2a;border-radius:4px;padding:3px 6px;font-size:10px;cursor:pointer}
+.title{font-size:14px;font-weight:700;padding-right:50px}.rating{color:#f59f00}.meta{font-size:11px;color:#6c757d;line-height:1.55;margin-top:5px}.pick{display:inline-block;background:#fff3bf;color:#8d6b00;border-radius:10px;padding:2px 6px;margin:2px 2px 0 0;font-size:10px;font-weight:700}.distance{margin-top:7px;background:#e7f5ff;color:#1971c2;padding:5px;border-radius:5px;font-size:11px;font-weight:700;text-align:center}.delete{position:absolute;right:9px;top:9px;border:0;background:#ffe3e3;color:#c92a2a;border-radius:4px;padding:3px 6px;font-size:10px;cursor:pointer}.edit{position:absolute;right:46px;top:9px;border:0;background:#e7f5ff;color:#1971c2;border-radius:4px;padding:3px 6px;font-size:10px;cursor:pointer}.pickcheck{display:flex;align-items:center;gap:4px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:5px;padding:6px 5px;font-size:11px;cursor:pointer}.pickcheck input{accent-color:#087f5b}
 #map{flex:1;height:100vh}.custom-pin{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid #fff;box-shadow:0 2px 6px #0004}.pin-숙소{background:#e64980}.pin-음식점{background:#845ef7}.pin-카페{background:#a0612b}.pin-관광지{background:#228be6}
 .hotel{background:#fff0f6;border-color:#e64980}.notice{font-size:11px;color:#868e96;background:#f8f9fa;padding:8px;border-radius:6px;margin-bottom:10px;line-height:1.5}
 textarea.input{min-height:65px;resize:vertical}.empty{padding:30px 10px;text-align:center;color:#868e96;font-size:13px}
@@ -41,6 +41,15 @@ textarea.input{min-height:65px;resize:vertical}.empty{padding:30px 10px;text-ali
       <button onclick="filterCategory('음식점',this)">🍴 음식점</button>
       <button onclick="filterCategory('카페',this)">☕ 카페</button>
       <button onclick="filterCategory('관광지',this)">🌴 관광지</button>
+    </div>
+    <div class="filter" id="person-filter">
+      <button class="active" onclick="filterPerson('전체',this)">👨‍👩‍👧‍👦 전체</button>
+      <button onclick="filterPerson('지현',this)">지현</button>
+      <button onclick="filterPerson('지숙',this)">지숙</button>
+      <button onclick="filterPerson('연정',this)">연정</button>
+      <button onclick="filterPerson('미경',this)">미경</button>
+      <button onclick="filterPerson('유리',this)">유리</button>
+      <button onclick="filterPerson('주은',this)">주은</button>
     </div>
     <div id="hotel-box"></div>
     <div id="place-list"></div>
@@ -88,7 +97,11 @@ textarea.input{min-height:65px;resize:vertical}.empty{padding:30px 10px;text-ali
       <div class="form-group"><label class="label">📅 예약</label><input id="input-reservation" class="input" placeholder="예: 캐치테이블 / 전화예약 / 예약 불가"></div>
       <div class="form-group"><label class="label">☕ 브레이크타임</label><input id="input-breaktime" class="input" placeholder="예: 15:00~17:00 / 없음"></div>
       <div class="form-group"><label class="label">🚫 휴무</label><input id="input-offday" class="input" placeholder="예: 매주 수요일 / 연중무휴"></div>
-      <div class="form-group"><label class="label">❤️ PICK한 가족</label><input id="input-picks" class="input" placeholder="예: 나, 엄마, 이모1"></div>
+      <div class="form-group"><label class="label">🚗 주차</label><input id="input-parking" class="input" placeholder="예: 가능 / 2시간 무료 / 공영주차장 이용"></div>
+      <div class="form-group">
+        <label class="label">❤️ PICK한 가족 <span style="font-weight:400;color:#868e96">복수 선택 가능</span></label>
+        <div id="pick-checks" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px"></div>
+      </div>
       <div class="form-group"><label class="label">📝 메모</label><textarea id="input-memo" class="input" placeholder="먹고 싶은 메뉴, 주차, 가고 싶은 이유 등을 적어주세요."></textarea></div>
     </div>
 
@@ -119,7 +132,8 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-let map,markers=[],tempMarker=null,accommodation=null,places=[],currentCategory="전체";
+let map,markers=[],tempMarker=null,accommodation=null,places=[],currentCategory="전체",currentPerson="전체",editingKey=null;
+const FAMILY=["지현","지숙","연정","미경","유리","주은"];
 
 function initMap(){
  map=L.map("map").setView([33.3617,126.5292],10);
@@ -145,6 +159,21 @@ function switchTab(tab){
 }
 function filterCategory(cat,btn){
  currentCategory=cat;document.querySelectorAll(".filter button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");render();
+}
+function filterPerson(person,btn){
+  currentPerson=person;
+  document.querySelectorAll("#person-filter button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
+function renderPickChecks(selected=[]){
+  const box=document.getElementById("pick-checks");
+  box.innerHTML=FAMILY.map(name=>`
+    <label class="pickcheck"><input type="checkbox" value="${name}" ${selected.includes(name)?"checked":""}> ${name}</label>
+  `).join("");
+}
+function getSelectedPicks(){
+  return Array.from(document.querySelectorAll("#pick-checks input:checked")).map(x=>x.value);
 }
 function createCustomIcon(cat){
  const icons={숙소:"fa-house",음식점:"fa-utensils",카페:"fa-mug-hot",관광지:"fa-mountain"};
@@ -210,11 +239,58 @@ function openAddressSearch(){
  }}).open();
 }
 async function geocodeAddress(address){
- try{
-  const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=kr&q=${encodeURIComponent(address+" 제주")}`,{headers:{"Accept-Language":"ko"}});
-  const d=await r.json();if(d[0]){setCoordinates(+d[0].lat,+d[0].lon);map.flyTo([+d[0].lat,+d[0].lon],16);return;}
- }catch(e){}
- alert("좌표 변환에 실패했습니다. 지도에서 위치를 직접 눌러주세요.");
+  // 다음 주소검색의 도로명 주소를 Nominatim에서 여러 방식으로 재검색합니다.
+  // 기존 코드처럼 주소 뒤에 "제주"를 강제로 붙이면 검색이 실패하는 경우가 있어
+  // 정확한 주소 → 제주 추가 → 도로명 일부 순서로 재시도합니다.
+  const queries = [
+    address,
+    address.replace(/대한민국/g,"").trim(),
+    address + " 대한민국",
+    address.replace(/제주특별자치도|제주도/g,"").trim() + " 제주특별자치도"
+  ];
+
+  const box = document.getElementById("search-results");
+  box.innerHTML = "<div class='notice'>📍 주소의 지도 위치를 찾는 중입니다...</div>";
+
+  for (const q of queries) {
+    if (!q) continue;
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=kr&q=${encodeURIComponent(q)}`;
+      const r = await fetch(url, {
+        headers: {
+          "Accept": "application/json",
+          "Accept-Language": "ko"
+        }
+      });
+      if (!r.ok) continue;
+
+      const d = await r.json();
+      if (d && d.length) {
+        // 제주 주소가 우선되도록 정렬
+        d.sort((a,b)=>{
+          const aj = /제주|Jeju/i.test(a.display_name||"") ? 1 : 0;
+          const bj = /제주|Jeju/i.test(b.display_name||"") ? 1 : 0;
+          return bj-aj;
+        });
+
+        const result = d[0];
+        setCoordinates(+result.lat, +result.lon);
+        map.flyTo([+result.lat, +result.lon], 17);
+
+        box.innerHTML = `<div class="notice">✅ 주소 위치를 찾았습니다.<br>
+          지도에서 위치를 확인한 뒤 <b>저장하기</b>를 눌러주세요.</div>`;
+        return;
+      }
+    } catch(e) {
+      console.error("주소 좌표 변환 오류:", e);
+    }
+  }
+
+  box.innerHTML = `<div class="notice">
+    ⚠️ 이 주소의 지도 좌표를 자동으로 찾지 못했습니다.<br>
+    아래 <b>지도에서 위치를 직접 클릭</b>하면 좌표가 입력됩니다.
+  </div>`;
+  alert("주소의 지도 위치를 자동으로 찾지 못했습니다. 지도에서 해당 위치를 직접 눌러주세요.");
 }
 function toggleCategory(){
  const hotel=document.getElementById("input-category").value==="숙소";
@@ -228,26 +304,61 @@ function savePlace(){
  const category=document.getElementById("input-category").value,name=document.getElementById("input-name").value.trim();
  const address=document.getElementById("input-address").value.trim(),lat=+document.getElementById("input-lat").value,lng=+document.getElementById("input-lng").value;
  if(!name||!address||isNaN(lat)||isNaN(lng))return alert("장소명, 주소, 위치를 모두 등록해주세요.");
- if(category==="숙소"){
-  db.ref("jeju_trip_data/hotel").set({name,address,lat,lng});
- }else{
-  db.ref("jeju_trip_data/places").push({
+
+ const payload={
    category,name,address,lat,lng,
    rating:document.getElementById("input-rating").value,
    noKids:document.getElementById("input-nokids").value,
    reservation:document.getElementById("input-reservation").value,
    breakTime:document.getElementById("input-breaktime").value,
    offDay:document.getElementById("input-offday").value,
-   picks:document.getElementById("input-picks").value,
+   parking:document.getElementById("input-parking").value,
+   picks:getSelectedPicks(),
    memo:document.getElementById("input-memo").value
-  });
+ };
+
+ if(category==="숙소"){
+   db.ref("jeju_trip_data/hotel").set({name,address,lat,lng});
+ }else if(editingKey){
+   db.ref(`jeju_trip_data/places/${editingKey}`).set(payload);
+ }else{
+   db.ref("jeju_trip_data/places").push(payload);
  }
- clearForm();switchTab("list");
+ clearForm();
+ switchTab("list");
 }
 function clearForm(){
- ["input-address","input-name","input-rating","input-nokids","input-reservation","input-breaktime","input-offday","input-picks","input-memo","input-lat","input-lng","place-search"].forEach(id=>document.getElementById(id).value="");
+ ["input-address","input-name","input-rating","input-nokids","input-reservation","input-breaktime","input-offday","input-parking","input-lat","input-lng","place-search"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("input-memo").value="";
  document.getElementById("search-results").innerHTML="";
+ renderPickChecks([]);
+ editingKey=null;
  if(tempMarker){map.removeLayer(tempMarker);tempMarker=null;}
+ const saveBtn=document.querySelector('#tab-add .btn-green');
+ if(saveBtn)saveBtn.textContent="저장하기";
+}
+function editPlace(key){
+ const p=places.find(x=>x.key===key);
+ if(!p)return;
+ editingKey=key;
+ document.getElementById("input-category").value=p.category||"음식점";
+ document.getElementById("input-name").value=p.name||"";
+ document.getElementById("input-address").value=p.address||"";
+ document.getElementById("input-rating").value=p.rating||"";
+ document.getElementById("input-nokids").value=p.noKids||"";
+ document.getElementById("input-reservation").value=p.reservation||"";
+ document.getElementById("input-breaktime").value=p.breakTime||"";
+ document.getElementById("input-offday").value=p.offDay||"";
+ document.getElementById("input-parking").value=p.parking||"";
+ document.getElementById("input-memo").value=p.memo||"";
+ document.getElementById("input-lat").value=p.lat||"";
+ document.getElementById("input-lng").value=p.lng||"";
+ renderPickChecks(Array.isArray(p.picks)?p.picks:String(p.picks||"").split(",").map(s=>s.trim()).filter(Boolean));
+ document.getElementById("search-results").innerHTML="<div class='notice'>✏️ 수정 중인 장소입니다. 내용을 바꾼 뒤 저장하면 기존 장소가 업데이트됩니다.</div>";
+ document.querySelector('#tab-add .btn-green').textContent="수정 내용 저장";
+ switchTab("add");
+ setCoordinates(+p.lat,+p.lng);
+ map.flyTo([+p.lat,+p.lng],16);
 }
 function deletePlace(key){if(confirm("이 장소를 삭제할까요?"))db.ref(`jeju_trip_data/places/${key}`).remove();}
 function deleteHotel(){if(confirm("숙소를 삭제할까요?"))db.ref("jeju_trip_data/hotel").remove();}
@@ -262,27 +373,38 @@ function render(){
    <div class="title">${escapeHtml(accommodation.name)}</div><div class="meta">${escapeHtml(accommodation.address||"")}</div></div>`;
   markers.push(L.marker([accommodation.lat,accommodation.lng],{icon:createCustomIcon("숙소")}).addTo(map).bindPopup(`<b>🏠 ${escapeHtml(accommodation.name)}</b>`));
  }
- const filtered=currentCategory==="전체"?places:places.filter(p=>p.category===currentCategory);
+ let filtered=currentCategory==="전체"?places:places.filter(p=>p.category===currentCategory);
+ if(currentPerson!=="전체"){
+   filtered=filtered.filter(p=>{
+     const arr=Array.isArray(p.picks)?p.picks:String(p.picks||"").split(",").map(s=>s.trim()).filter(Boolean):[];
+     return arr.includes(currentPerson);
+   });
+ }
  if(!filtered.length)document.getElementById("place-list").innerHTML="<div class='empty'>아직 등록된 장소가 없어요.<br>장소 추가에서 검색해보세요.</div>";
  filtered.forEach(p=>{
   const dist=accommodation?`🏠 숙소에서 약 ${getDistance(accommodation.lat,accommodation.lng,p.lat,p.lng)} km`:"숙소를 등록하면 거리가 표시됩니다";
-  const picks=(p.picks||"").split(",").map(s=>s.trim()).filter(Boolean).map(s=>`<span class="pick">❤️ ${escapeHtml(s)}</span>`).join("");
+  const pickArr=Array.isArray(p.picks)?p.picks:String(p.picks||"").split(",").map(s=>s.trim()).filter(Boolean):[];
+  const picks=pickArr.map(s=>`<span class="pick">❤️ ${escapeHtml(s)}</span>`).join("");
   const card=document.createElement("div");card.className="place-card";
   card.onclick=e=>{if(e.target.tagName!=="BUTTON")map.flyTo([p.lat,p.lng],16)};
-  card.innerHTML=`<span class="badge badge-${p.category}">${p.category}</span><button class="delete" onclick="event.stopPropagation();deletePlace('${p.key}')">삭제</button>
+  const pickArr=Array.isArray(p.picks)?p.picks:String(p.picks||"").split(",").map(s=>s.trim()).filter(Boolean):[];
+  card.innerHTML=`<span class="badge badge-${p.category}">${p.category}</span>
+   <button class="edit" onclick="event.stopPropagation();editPlace('${p.key}')">수정</button>
+   <button class="delete" onclick="event.stopPropagation();deletePlace('${p.key}')">삭제</button>
    <div class="title">${escapeHtml(p.name)} <span class="rating">${p.rating?`★ ${escapeHtml(p.rating)}`:""}</span></div>
    <div class="meta">${escapeHtml(p.address||"")}<br>
    👶 노키즈: ${escapeHtml(p.noKids||"-")} · 📅 예약: ${escapeHtml(p.reservation||"-")}<br>
    ☕ 브레이크: ${escapeHtml(p.breakTime||"-")} · 🚫 휴무: ${escapeHtml(p.offDay||"-")}<br>
+   🚗 주차: ${escapeHtml(p.parking||"-")}<br>
    ${p.memo?`📝 ${escapeHtml(p.memo)}<br>`:""}${picks}</div>
    <div class="distance">${dist}</div>`;
   document.getElementById("place-list").appendChild(card);
-  const popup=`<b>${escapeHtml(p.name)}</b><br>📍 ${escapeHtml(p.category)}<br>${p.rating?`⭐ ${escapeHtml(p.rating)}<br>`:""}${p.picks?`❤️ ${escapeHtml(p.picks)}<br>`:""}${accommodation?`🏠 숙소에서 ${getDistance(accommodation.lat,accommodation.lng,p.lat,p.lng)} km`:""}`;
+  const popup=`<b>${escapeHtml(p.name)}</b><br>📍 ${escapeHtml(p.category)}<br>${p.rating?`⭐ ${escapeHtml(p.rating)}<br>`:""}${pickArr.length?`❤️ ${escapeHtml(pickArr.join(", "))}<br>`:""}${p.parking?`🚗 주차: ${escapeHtml(p.parking)}<br>`:""}${accommodation?`🏠 숙소에서 ${getDistance(accommodation.lat,accommodation.lng,p.lat,p.lng)} km`:""}`;
   markers.push(L.marker([p.lat,p.lng],{icon:createCustomIcon(p.category)}).addTo(map).bindPopup(popup));
  });
 }
 
-window.onload=initMap;
+window.onload=()=>{renderPickChecks([]);initMap();};
 </script>
 </body>
 </html>
