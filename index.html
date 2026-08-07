@@ -1,411 +1,288 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>우리 가족 제주 여행 지도 (실시간 동기화)</title>
-  
-  <!-- Leaflet 지도 & FontAwesome 아이콘 CDN -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; }
-    body { display: flex; height: 100vh; overflow: hidden; background: #f8f9fa; }
-
-    #sidebar {
-      width: 420px; height: 100%; background: #ffffff;
-      border-right: 1px solid #dee2e6; display: flex; flex-direction: column;
-      z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-    }
-    .header { padding: 18px; background: #007bff; color: white; }
-    .header h1 { font-size: 18px; margin-bottom: 4px; }
-    
-    .tab-group { display: flex; background: #e9ecef; border-bottom: 1px solid #dee2e6; }
-    .tab-btn { flex: 1; padding: 10px; border: none; background: none; font-weight: bold; cursor: pointer; color: #495057; }
-    .tab-btn.active { background: white; color: #007bff; border-bottom: 3px solid #007bff; }
-
-    .content-body { flex: 1; overflow-y: auto; padding: 15px; }
-
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 12px; font-weight: bold; color: #495057; margin-bottom: 4px; }
-    .form-control { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid #ced4da; border-radius: 4px; }
-    
-    .search-box { display: flex; gap: 5px; }
-    .btn-search { padding: 8px 12px; background: #17a2b8; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
-    .btn-search:hover { background: #138496; }
-
-    .btn-submit { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-    .btn-submit:hover { background: #218838; }
-
-    .filter-group { display: flex; gap: 4px; margin-bottom: 12px; }
-    .filter-btn { flex: 1; padding: 6px; font-size: 12px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer; }
-    .filter-btn.active { background: #007bff; color: white; }
-
-    .place-card { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; position: relative; }
-    .place-card:hover { border-color: #007bff; }
-    .badge { display: inline-block; padding: 2px 6px; font-size: 11px; border-radius: 10px; color: white; font-weight: bold; margin-bottom: 5px; }
-    .badge-음식점 { background: #8a2be2; }
-    .badge-카페 { background: #8b4513; }
-    .badge-관광지 { background: #007bff; }
-    .badge-숙소 { background: #e83e8c; }
-
-    .card-title { font-size: 15px; font-weight: bold; display: flex; justify-content: space-between; }
-    .rating { color: #f39c12; }
-    .info-grid { font-size: 12px; color: #6c757d; margin-top: 6px; display: grid; gap: 2px; }
-    .dist-tag { margin-top: 6px; padding: 4px; background: #e7f5ff; color: #1971c2; font-size: 11px; text-align: center; border-radius: 4px; font-weight: bold; }
-
-    .btn-delete { position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; padding: 2px 6px; font-size: 11px; border-radius: 3px; cursor: pointer; }
-
-    .custom-pin {
-      display: flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; border-radius: 50%; color: white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid white;
-      font-size: 14px;
-    }
-    .pin-숙소 { background-color: #e83e8c; }
-    .pin-음식점 { background-color: #8a2be2; }
-    .pin-카페 { background-color: #8b4513; }
-    .pin-관광지 { background-color: #007bff; }
-
-    #map { flex: 1; height: 100vh; width: 100%; z-index: 1; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 가족 제주 여행 지도</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic',sans-serif}
+body{display:flex;height:100vh;overflow:hidden;background:#f7f8fa;color:#212529}
+#sidebar{width:440px;height:100%;background:#fff;border-right:1px solid #ddd;display:flex;flex-direction:column;z-index:1000;box-shadow:2px 0 12px #00000010}
+.header{padding:17px 18px;background:#087f5b;color:#fff}.header h1{font-size:18px}.header p{font-size:11px;opacity:.9;margin-top:5px}
+.tabs{display:flex;background:#f1f3f5;border-bottom:1px solid #ddd}.tab{flex:1;padding:11px;border:0;background:transparent;font-weight:700;color:#666;cursor:pointer}.tab.active{background:#fff;color:#087f5b;border-bottom:3px solid #087f5b}
+.content{flex:1;overflow:auto;padding:14px}
+.filter{display:flex;gap:4px;margin-bottom:12px}.filter button{flex:1;padding:7px 4px;border:1px solid #087f5b;background:#fff;color:#087f5b;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700}.filter button.active{background:#087f5b;color:#fff}
+.form-group{margin-bottom:11px}.label{display:block;font-size:12px;font-weight:700;color:#495057;margin-bottom:4px}.input,.select{width:100%;padding:9px 10px;border:1px solid #ced4da;border-radius:6px;font-size:13px;background:#fff}.row{display:flex;gap:7px}.row>*{flex:1}
+.searchrow{display:flex;gap:6px}.searchrow .input{flex:1}.btn{border:0;border-radius:6px;padding:9px 11px;cursor:pointer;font-weight:700}.btn-search{background:#495057;color:#fff}.btn-green{background:#087f5b;color:#fff}.btn-gray{background:#e9ecef;color:#343a40}.btn-danger{background:#e03131;color:#fff}
+.search-results{margin-top:8px}.search-result{border:1px solid #dee2e6;border-radius:7px;padding:9px;margin-bottom:6px;background:#fff}.search-result:hover{border-color:#087f5b;background:#f4fbf8}.search-result b{display:block;font-size:13px;margin-bottom:3px}.search-result small{display:block;color:#6c757d;line-height:1.4}.search-result button{margin-top:6px;width:100%;padding:6px;border:0;border-radius:5px;background:#087f5b;color:#fff;font-weight:700;cursor:pointer;font-size:12px}
+.place-card{background:#fff;border:1px solid #e1e5e8;border-radius:9px;padding:11px 12px;margin-bottom:9px;cursor:pointer;position:relative}.place-card:hover{border-color:#087f5b}.badge{display:inline-block;padding:3px 7px;border-radius:12px;color:#fff;font-size:10px;font-weight:700;margin-bottom:5px}.badge-음식점{background:#845ef7}.badge-카페{background:#a0612b}.badge-관광지{background:#228be6}.badge-숙소{background:#e64980}
+.title{font-size:14px;font-weight:700;padding-right:50px}.rating{color:#f59f00}.meta{font-size:11px;color:#6c757d;line-height:1.55;margin-top:5px}.pick{display:inline-block;background:#fff3bf;color:#8d6b00;border-radius:10px;padding:2px 6px;margin:2px 2px 0 0;font-size:10px;font-weight:700}.distance{margin-top:7px;background:#e7f5ff;color:#1971c2;padding:5px;border-radius:5px;font-size:11px;font-weight:700;text-align:center}.delete{position:absolute;right:9px;top:9px;border:0;background:#ffe3e3;color:#c92a2a;border-radius:4px;padding:3px 6px;font-size:10px;cursor:pointer}
+#map{flex:1;height:100vh}.custom-pin{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid #fff;box-shadow:0 2px 6px #0004}.pin-숙소{background:#e64980}.pin-음식점{background:#845ef7}.pin-카페{background:#a0612b}.pin-관광지{background:#228be6}
+.hotel{background:#fff0f6;border-color:#e64980}.notice{font-size:11px;color:#868e96;background:#f8f9fa;padding:8px;border-radius:6px;margin-bottom:10px;line-height:1.5}
+textarea.input{min-height:65px;resize:vertical}.empty{padding:30px 10px;text-align:center;color:#868e96;font-size:13px}
+</style>
 </head>
 <body>
-
-  <div id="sidebar">
-    <div class="header">
-      <h1>🌴 제주도 가족 여행 가이드</h1>
-      <p style="font-size: 11px; opacity: 0.9;">🔴 실시간 가족 동기화 모드 작동 중</p>
-    </div>
-
-    <div class="tab-group">
-      <button class="tab-btn active" onclick="switchTab('list')">장소 목록</button>
-      <button class="tab-btn" onclick="switchTab('add')">➕ 장소/숙소 추가</button>
-    </div>
-
-    <div id="tab-list" class="content-body">
-      <div class="filter-group">
-        <button class="filter-btn active" onclick="filterCategory('전체')">전체</button>
-        <button class="filter-btn" onclick="filterCategory('음식점')">음식점</button>
-        <button class="filter-btn" onclick="filterCategory('카페')">카페</button>
-        <button class="filter-btn" onclick="filterCategory('관광지')">관광지</button>
-      </div>
-      <div id="hotel-info-box"></div>
-      <div id="place-list-container"></div>
-    </div>
-
-    <div id="tab-add" class="content-body" style="display: none;">
-      <div class="form-group">
-        <label>구분</label>
-        <select id="input-category" class="form-control" onchange="toggleHotelMode()">
-          <option value="음식점">음식점</option>
-          <option value="카페">카페</option>
-          <option value="관광지">관광지</option>
-          <option value="숙소">🏠 숙소 (기준점)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>도로명 주소 검색</label>
-        <div class="search-box">
-          <input type="text" id="input-address" class="form-control" placeholder="버튼을 눌러 주소를 검색하세요" readonly>
-          <button type="button" class="btn-search" onclick="openAddressSearch()">🏠 주소 검색</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>장소/상호명 (목록에 표시될 이름)</label>
-        <input type="text" id="input-name" class="form-control" placeholder="예: 숙성도 중문점, 카페 댚">
-      </div>
-
-      <div class="form-group" id="group-rating">
-        <label>별점</label>
-        <input type="number" step="0.1" id="input-rating" class="form-control" placeholder="4.5">
-      </div>
-
-      <div class="form-group" id="group-nokids">
-        <label>노키즈존 여부</label>
-        <input type="text" id="input-nokids" class="form-control" placeholder="예: YES존 / 노키즈존">
-      </div>
-
-      <div class="form-group" id="group-reservation">
-        <label>예약 가능 여부</label>
-        <input type="text" id="input-reservation" class="form-control" placeholder="예: 캐치테이블 / 전화예약">
-      </div>
-
-      <div class="form-group" id="group-breaktime">
-        <label>브레이크 타임</label>
-        <input type="text" id="input-breaktime" class="form-control" placeholder="예: 15:00 ~ 16:30">
-      </div>
-
-      <div class="form-group" id="group-offday">
-        <label>휴무일</label>
-        <input type="text" id="input-offday" class="form-control" placeholder="예: 매주 수요일 / 연중무휴">
-      </div>
-
-      <div style="display: flex; gap: 5px;">
-        <div class="form-group" style="flex:1;">
-          <label>위도 (Lat)</label>
-          <input type="text" id="input-lat" class="form-control" placeholder="자동 입력됨" readonly>
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label>경도 (Lng)</label>
-          <input type="text" id="input-lng" class="form-control" placeholder="자동 입력됨" readonly>
-        </div>
-      </div>
-
-      <button class="btn-submit" onclick="savePlace()">저장하기</button>
-    </div>
+<div id="sidebar">
+  <div class="header">
+    <h1>🌴 제주도 가족 여행 지도</h1>
+    <p>📍 가족들이 고른 장소를 한곳에 모아보세요</p>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('list')">장소 목록</button>
+    <button class="tab" onclick="switchTab('add')">➕ 장소 추가</button>
   </div>
 
-  <div id="map"></div>
+  <div id="tab-list" class="content">
+    <div class="filter">
+      <button class="active" onclick="filterCategory('전체',this)">전체</button>
+      <button onclick="filterCategory('음식점',this)">🍴 음식점</button>
+      <button onclick="filterCategory('카페',this)">☕ 카페</button>
+      <button onclick="filterCategory('관광지',this)">🌴 관광지</button>
+    </div>
+    <div id="hotel-box"></div>
+    <div id="place-list"></div>
+  </div>
 
-  <!-- Leaflet 지도 라이브러리 -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <div id="tab-add" class="content" style="display:none">
+    <div class="notice">
+      💡 <b>장소 검색</b>은 OpenStreetMap의 장소 데이터를 이용합니다. 검색어 뒤에 제주를 자동으로 붙이고, 결과가 없으면 여러 방식으로 다시 검색합니다.<br>
+      검색이 안 되는 가게는 아래 주소 검색 또는 지도를 직접 눌러 위치를 지정할 수 있습니다.
+    </div>
 
-  <!-- 카카오 공식 도로명주소 검색 서비스 API (API 키 불필요) -->
-  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <div class="form-group">
+      <label class="label">구분</label>
+      <select id="input-category" class="select" onchange="toggleCategory()">
+        <option value="음식점">🍴 음식점</option><option value="카페">☕ 카페</option>
+        <option value="관광지">🌴 관광지</option><option value="숙소">🏠 숙소</option>
+      </select>
+    </div>
 
-  <!-- Firebase 실시간 DB 라이브러리 -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <div class="form-group">
+      <label class="label">🔎 장소 검색</label>
+      <div class="searchrow">
+        <input id="place-search" class="input" placeholder="예: 우진해장국 / 제주 흑돼지 / 오설록">
+        <button class="btn btn-search" onclick="searchPlaces()">검색</button>
+      </div>
+      <div id="search-results" class="search-results"></div>
+    </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCqzu-A6-woxTIStlwXOXk3N5hT0WrVa14",
-      authDomain: "jeju-trip-3dd23.firebaseapp.com",
-      databaseURL: "https://jeju-trip-3dd23-default-rtdb.firebaseio.com",
-      projectId: "jeju-trip-3dd23",
-      storageBucket: "jeju-trip-3dd23.firebasestorage.app",
-      messagingSenderId: "647159148234",
-      appId: "1:647159148234:web:1780f7619ed3cc1a2a4e33",
-      measurementId: "G-9E3M0372M6"
-    };
+    <div class="form-group">
+      <label class="label">도로명 주소</label>
+      <div class="searchrow">
+        <input id="input-address" class="input" placeholder="검색 결과 선택 또는 주소 검색" readonly>
+        <button class="btn btn-gray" onclick="openAddressSearch()">주소 검색</button>
+      </div>
+    </div>
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    <div class="form-group">
+      <label class="label">장소/상호명</label>
+      <input id="input-name" class="input" placeholder="예: 우진해장국">
+    </div>
 
-    let map, markers = [];
-    let tempMarker = null;
-    let accommodation = null;
-    let places = [];
-    let currentCategory = '전체';
+    <div id="detail-fields">
+      <div class="form-group"><label class="label">⭐ 별점</label><input id="input-rating" class="input" type="number" min="0" max="5" step=".1" placeholder="예: 4.5"></div>
+      <div class="form-group"><label class="label">👶 노키즈존</label><input id="input-nokids" class="input" placeholder="예: 아님 / 노키즈존 / 확인 필요"></div>
+      <div class="form-group"><label class="label">📅 예약</label><input id="input-reservation" class="input" placeholder="예: 캐치테이블 / 전화예약 / 예약 불가"></div>
+      <div class="form-group"><label class="label">☕ 브레이크타임</label><input id="input-breaktime" class="input" placeholder="예: 15:00~17:00 / 없음"></div>
+      <div class="form-group"><label class="label">🚫 휴무</label><input id="input-offday" class="input" placeholder="예: 매주 수요일 / 연중무휴"></div>
+      <div class="form-group"><label class="label">❤️ PICK한 가족</label><input id="input-picks" class="input" placeholder="예: 나, 엄마, 이모1"></div>
+      <div class="form-group"><label class="label">📝 메모</label><textarea id="input-memo" class="input" placeholder="먹고 싶은 메뉴, 주차, 가고 싶은 이유 등을 적어주세요."></textarea></div>
+    </div>
 
-    function initMap() {
-      map = L.map('map').setView([33.3617, 126.5292], 10);
+    <div class="row">
+      <div class="form-group"><label class="label">위도</label><input id="input-lat" class="input" readonly></div>
+      <div class="form-group"><label class="label">경도</label><input id="input-lng" class="input" readonly></div>
+    </div>
+    <button class="btn btn-green" style="width:100%;margin-top:4px" onclick="savePlace()">저장하기</button>
+  </div>
+</div>
+<div id="map"></div>
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19, attribution: '© OpenStreetMap'
-      }).addTo(map);
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig={
+ apiKey:"AIzaSyCqzu-A6-woxTIStlwXOXk3N5hT0WrVa14",
+ authDomain:"jeju-trip-3dd23.firebaseapp.com",
+ databaseURL:"https://jeju-trip-3dd23-default-rtdb.firebaseio.com",
+ projectId:"jeju-trip-3dd23",
+ storageBucket:"jeju-trip-3dd23.firebasestorage.app",
+ messagingSenderId:"647159148234",
+ appId:"1:647159148234:web:1780f7619ed3cc1a2a4e33",
+ measurementId:"G-9E3M0372M6"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
 
-      map.on('click', function(e) {
-        setCoordinates(e.latlng.lat, e.latlng.lng);
-        switchTab('add');
-      });
+let map,markers=[],tempMarker=null,accommodation=null,places=[],currentCategory="전체";
 
-      listenRealtimeData();
-    }
+function initMap(){
+ map=L.map("map").setView([33.3617,126.5292],10);
+ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
+ map.on("click",e=>{setCoordinates(e.latlng.lat,e.latlng.lng);switchTab("add");});
+ listenRealtimeData();
+}
 
-    // 도로명 주소 검색 (우편번호 서비스 팝업)
-    function openAddressSearch() {
-      new daum.Postcode({
-        oncomplete: function(data) {
-          const fullAddress = data.address;
-          document.getElementById('input-address').value = fullAddress;
-          
-          if (!document.getElementById('input-name').value) {
-            document.getElementById('input-name').value = data.buildingName || fullAddress;
-          }
+function listenRealtimeData(){
+ db.ref("jeju_trip_data").on("value",snap=>{
+  const data=snap.val()||{};
+  accommodation=data.hotel||null;
+  places=data.places?Object.keys(data.places).map(key=>({key,...data.places[key]})):[];
+  render();
+ });
+}
 
-          // 주소를 좌표(위도, 경도)로 변환하는 변환 엔진 호출
-          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`)
-            .then(res => res.json())
-            .then(results => {
-              if (results && results.length > 0) {
-                const lat = parseFloat(results[0].lat);
-                const lng = parseFloat(results[0].lon);
-                setCoordinates(lat, lng);
-                map.flyTo([lat, lng], 15);
-              } else {
-                alert('주소 위치 정보 변환에 실패했습니다. 지도를 클릭해서 위치를 찍어주세요.');
-              }
-            })
-            .catch(() => alert('위치 정보를 불러오지 못했습니다. 지도를 직접 클릭해 지정하세요.'));
-        }
-      }).open();
-    }
+function switchTab(tab){
+ document.getElementById("tab-list").style.display=tab==="list"?"block":"none";
+ document.getElementById("tab-add").style.display=tab==="add"?"block":"none";
+ document.querySelectorAll(".tab").forEach((b,i)=>b.classList.toggle("active",(tab==="list"&&i===0)||(tab==="add"&&i===1)));
+ setTimeout(()=>map.invalidateSize(),50);
+}
+function filterCategory(cat,btn){
+ currentCategory=cat;document.querySelectorAll(".filter button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");render();
+}
+function createCustomIcon(cat){
+ const icons={숙소:"fa-house",음식점:"fa-utensils",카페:"fa-mug-hot",관광지:"fa-mountain"};
+ return L.divIcon({className:"",html:`<div class="custom-pin pin-${cat}"><i class="fa-solid ${icons[cat]||"fa-location-dot"}"></i></div>`,iconSize:[32,32],iconAnchor:[16,16]});
+}
+function setCoordinates(lat,lng){
+ document.getElementById("input-lat").value=Number(lat).toFixed(6);
+ document.getElementById("input-lng").value=Number(lng).toFixed(6);
+ if(tempMarker)map.removeLayer(tempMarker);
+ tempMarker=L.marker([lat,lng],{icon:createCustomIcon(document.getElementById("input-category").value)}).addTo(map);
+}
+function getDistance(lat1,lon1,lat2,lon2){
+ const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+ const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+ return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
+}
 
-    function listenRealtimeData() {
-      db.ref('jeju_trip_data').on('value', (snapshot) => {
-        const data = snapshot.val() || {};
-        accommodation = data.hotel || null;
-        
-        if (data.places) {
-          places = Object.keys(data.places).map(key => ({
-            key: key,
-            ...data.places[key]
-          }));
-        } else {
-          places = [];
-        }
-        render();
-      });
-    }
+/* 검색 개선: 한 번 실패해도 검색어를 바꿔 최대 3회 시도 */
+async function searchPlaces(){
+ const input=document.getElementById("place-search"), box=document.getElementById("search-results");
+ const raw=input.value.trim(); if(!raw)return alert("검색어를 입력해주세요.");
+ box.innerHTML="<div class='notice'>🔎 제주 장소를 검색하고 있습니다...</div>";
+ const cat=document.getElementById("input-category").value;
+ const terms=[raw,`${raw} 제주`,`${raw} 제주특별자치도`];
+ if(cat==="음식점")terms.push(`${raw} 제주 맛집`);
+ if(cat==="카페")terms.push(`${raw} 제주 카페`);
+ if(cat==="관광지")terms.push(`${raw} 제주 관광지`);
+ let all=[],seen=new Set();
+ for(const q of terms){
+   try{
+     const url=`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&countrycodes=kr&q=${encodeURIComponent(q)}`;
+     const res=await fetch(url,{headers:{Accept:"application/json","Accept-Language":"ko"}});
+     const data=await res.json();
+     data.forEach(x=>{
+       const lat=+x.lat,lng=+x.lon;
+       const isJeju=/제주|Jeju/i.test((x.display_name||"")+" "+(x.address?.state||""));
+       if(isJeju && !seen.has(x.place_id)){seen.add(x.place_id);all.push(x);}
+     });
+     if(all.length>=8)break;
+   }catch(e){}
+ }
+ if(!all.length){box.innerHTML="<div class='notice'>검색 결과가 없습니다. 상호명 뒤에 '제주'를 붙여 다시 검색하거나 주소 검색을 이용해주세요.</div>";return;}
+ box.innerHTML=all.slice(0,10).map((x,i)=>`
+   <div class="search-result">
+    <b>${escapeHtml(cleanName(x.display_name,x.name))}</b>
+    <small>${escapeHtml(x.display_name)}</small>
+    <button onclick='selectSearchResult(${JSON.stringify({name:x.name||cleanName(x.display_name),address:x.display_name,lat:x.lat,lng:x.lon})})'>이 장소 선택</button>
+   </div>`).join("");
+}
+function cleanName(display,name){return name||display.split(",")[0];}
+function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function selectSearchResult(x){
+ document.getElementById("input-name").value=x.name||"";
+ document.getElementById("input-address").value=x.address||"";
+ setCoordinates(+x.lat,+x.lng);map.flyTo([+x.lat,+x.lng],16);
+ document.getElementById("search-results").innerHTML="<div class='notice'>✅ 장소를 선택했습니다. 아래 정보를 입력한 뒤 저장하세요.</div>";
+}
+function openAddressSearch(){
+ new daum.Postcode({oncomplete:function(data){
+  document.getElementById("input-address").value=data.address;
+  if(!document.getElementById("input-name").value)document.getElementById("input-name").value=data.buildingName||"";
+  geocodeAddress(data.address);
+ }}).open();
+}
+async function geocodeAddress(address){
+ try{
+  const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=kr&q=${encodeURIComponent(address+" 제주")}`,{headers:{"Accept-Language":"ko"}});
+  const d=await r.json();if(d[0]){setCoordinates(+d[0].lat,+d[0].lon);map.flyTo([+d[0].lat,+d[0].lon],16);return;}
+ }catch(e){}
+ alert("좌표 변환에 실패했습니다. 지도에서 위치를 직접 눌러주세요.");
+}
+function toggleCategory(){
+ const hotel=document.getElementById("input-category").value==="숙소";
+ document.getElementById("detail-fields").style.display=hotel?"none":"block";
+ if(tempMarker){
+  const lat=+document.getElementById("input-lat").value,lng=+document.getElementById("input-lng").value;
+  setCoordinates(lat,lng);
+ }
+}
+function savePlace(){
+ const category=document.getElementById("input-category").value,name=document.getElementById("input-name").value.trim();
+ const address=document.getElementById("input-address").value.trim(),lat=+document.getElementById("input-lat").value,lng=+document.getElementById("input-lng").value;
+ if(!name||!address||isNaN(lat)||isNaN(lng))return alert("장소명, 주소, 위치를 모두 등록해주세요.");
+ if(category==="숙소"){
+  db.ref("jeju_trip_data/hotel").set({name,address,lat,lng});
+ }else{
+  db.ref("jeju_trip_data/places").push({
+   category,name,address,lat,lng,
+   rating:document.getElementById("input-rating").value,
+   noKids:document.getElementById("input-nokids").value,
+   reservation:document.getElementById("input-reservation").value,
+   breakTime:document.getElementById("input-breaktime").value,
+   offDay:document.getElementById("input-offday").value,
+   picks:document.getElementById("input-picks").value,
+   memo:document.getElementById("input-memo").value
+  });
+ }
+ clearForm();switchTab("list");
+}
+function clearForm(){
+ ["input-address","input-name","input-rating","input-nokids","input-reservation","input-breaktime","input-offday","input-picks","input-memo","input-lat","input-lng","place-search"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("search-results").innerHTML="";
+ if(tempMarker){map.removeLayer(tempMarker);tempMarker=null;}
+}
+function deletePlace(key){if(confirm("이 장소를 삭제할까요?"))db.ref(`jeju_trip_data/places/${key}`).remove();}
+function deleteHotel(){if(confirm("숙소를 삭제할까요?"))db.ref("jeju_trip_data/hotel").remove();}
 
-    function createCustomIcon(category) {
-      let iconClass = '';
-      if (category === '숙소') iconClass = 'fa-solid fa-house';
-      else if (category === '음식점') iconClass = 'fa-solid fa-utensils';
-      else if (category === '카페') iconClass = 'fa-solid fa-mug-hot';
-      else if (category === '관광지') iconClass = 'fa-solid fa-mountain';
+function render(){
+ markers.forEach(m=>map.removeLayer(m));markers=[];
+ document.getElementById("place-list").innerHTML="";
+ document.getElementById("hotel-box").innerHTML="";
+ if(accommodation){
+  document.getElementById("hotel-box").innerHTML=`<div class="place-card hotel" onclick="map.flyTo([${accommodation.lat},${accommodation.lng}],15)">
+   <span class="badge badge-숙소">🏠 우리 숙소</span><button class="delete" onclick="event.stopPropagation();deleteHotel()">삭제</button>
+   <div class="title">${escapeHtml(accommodation.name)}</div><div class="meta">${escapeHtml(accommodation.address||"")}</div></div>`;
+  markers.push(L.marker([accommodation.lat,accommodation.lng],{icon:createCustomIcon("숙소")}).addTo(map).bindPopup(`<b>🏠 ${escapeHtml(accommodation.name)}</b>`));
+ }
+ const filtered=currentCategory==="전체"?places:places.filter(p=>p.category===currentCategory);
+ if(!filtered.length)document.getElementById("place-list").innerHTML="<div class='empty'>아직 등록된 장소가 없어요.<br>장소 추가에서 검색해보세요.</div>";
+ filtered.forEach(p=>{
+  const dist=accommodation?`🏠 숙소에서 약 ${getDistance(accommodation.lat,accommodation.lng,p.lat,p.lng)} km`:"숙소를 등록하면 거리가 표시됩니다";
+  const picks=(p.picks||"").split(",").map(s=>s.trim()).filter(Boolean).map(s=>`<span class="pick">❤️ ${escapeHtml(s)}</span>`).join("");
+  const card=document.createElement("div");card.className="place-card";
+  card.onclick=e=>{if(e.target.tagName!=="BUTTON")map.flyTo([p.lat,p.lng],16)};
+  card.innerHTML=`<span class="badge badge-${p.category}">${p.category}</span><button class="delete" onclick="event.stopPropagation();deletePlace('${p.key}')">삭제</button>
+   <div class="title">${escapeHtml(p.name)} <span class="rating">${p.rating?`★ ${escapeHtml(p.rating)}`:""}</span></div>
+   <div class="meta">${escapeHtml(p.address||"")}<br>
+   👶 노키즈: ${escapeHtml(p.noKids||"-")} · 📅 예약: ${escapeHtml(p.reservation||"-")}<br>
+   ☕ 브레이크: ${escapeHtml(p.breakTime||"-")} · 🚫 휴무: ${escapeHtml(p.offDay||"-")}<br>
+   ${p.memo?`📝 ${escapeHtml(p.memo)}<br>`:""}${picks}</div>
+   <div class="distance">${dist}</div>`;
+  document.getElementById("place-list").appendChild(card);
+  const popup=`<b>${escapeHtml(p.name)}</b><br>📍 ${escapeHtml(p.category)}<br>${p.rating?`⭐ ${escapeHtml(p.rating)}<br>`:""}${p.picks?`❤️ ${escapeHtml(p.picks)}<br>`:""}${accommodation?`🏠 숙소에서 ${getDistance(accommodation.lat,accommodation.lng,p.lat,p.lng)} km`:""}`;
+  markers.push(L.marker([p.lat,p.lng],{icon:createCustomIcon(p.category)}).addTo(map).bindPopup(popup));
+ });
+}
 
-      return L.divIcon({
-        className: 'custom-icon-wrap',
-        html: `<div class="custom-pin pin-${category}"><i class="${iconClass}"></i></div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
-      });
-    }
-
-    function setCoordinates(lat, lng) {
-      document.getElementById('input-lat').value = lat.toFixed(6);
-      document.getElementById('input-lng').value = lng.toFixed(6);
-
-      if (tempMarker) map.removeLayer(tempMarker);
-      const cat = document.getElementById('input-category').value;
-      tempMarker = L.marker([lat, lng], { icon: createCustomIcon(cat) }).addTo(map);
-    }
-
-    function getDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-      return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
-    }
-
-    function render() {
-      markers.forEach(m => map.removeLayer(m));
-      if (tempMarker) map.removeLayer(tempMarker);
-      markers = [];
-
-      const listContainer = document.getElementById('place-list-container');
-      const hotelBox = document.getElementById('hotel-info-box');
-      listContainer.innerHTML = '';
-      hotelBox.innerHTML = '';
-
-      if (accommodation) {
-        hotelBox.innerHTML = `
-          <div class="place-card" style="background:#fce4ec; border-color:#e83e8c;">
-            <span class="badge badge-숙소">우리 숙소</span>
-            <div class="card-title">${accommodation.name}</div>
-            <button class="btn-delete" onclick="deleteHotel()">삭제</button>
-          </div>
-        `;
-        const hotelMarker = L.marker([accommodation.lat, accommodation.lng], {
-          icon: createCustomIcon('숙소')
-        }).addTo(map).bindPopup(`<b>🏠 숙소: ${accommodation.name}</b>`);
-        markers.push(hotelMarker);
-      }
-
-      const filtered = currentCategory === '전체' ? places : places.filter(p => p.category === currentCategory);
-
-      filtered.forEach((p) => {
-        let distText = accommodation ? `🏠 숙소로부터 약 ${getDistance(accommodation.lat, accommodation.lng, p.lat, p.lng)} km` : "숙소를 등록하면 거리가 표시됩니다";
-
-        const card = document.createElement('div');
-        card.className = 'place-card';
-        card.onclick = (e) => {
-          if(e.target.tagName !== 'BUTTON') map.flyTo([p.lat, p.lng], 14);
-        };
-
-        card.innerHTML = `
-          <span class="badge badge-${p.category}">${p.category}</span>
-          <button class="btn-delete" onclick="deletePlace('${p.key}')">삭제</button>
-          <div class="card-title">${p.name} <span class="rating">★ ${p.rating || '-'}</span></div>
-          <div class="info-grid">
-            <div>• 노키즈: ${p.noKids || '-'}</div>
-            <div>• 예약: ${p.reservation || '-'}</div>
-            <div>• 브레이크: ${p.breakTime || '-'}</div>
-            <div>• 휴무: ${p.offDay || '-'}</div>
-          </div>
-          <div class="dist-tag">${distText}</div>
-        `;
-        listContainer.appendChild(card);
-
-        const marker = L.marker([p.lat, p.lng], {
-          icon: createCustomIcon(p.category)
-        }).addTo(map).bindPopup(`<b>${p.name}</b><br>★ ${p.rating}<br>${p.category}`);
-        
-        markers.push(marker);
-      });
-    }
-
-    function savePlace() {
-      const category = document.getElementById('input-category').value;
-      const name = document.getElementById('input-name').value;
-      const lat = parseFloat(document.getElementById('input-lat').value);
-      const lng = parseFloat(document.getElementById('input-lng').value);
-
-      if (!name || isNaN(lat) || isNaN(lng)) return alert('장소명과 주소/위치를 등록해주세요!');
-
-      if (category === '숙소') {
-        db.ref('jeju_trip_data/hotel').set({ name, lat, lng });
-      } else {
-        const newPlace = {
-          category, name, lat, lng,
-          rating: document.getElementById('input-rating').value,
-          noKids: document.getElementById('input-nokids').value,
-          reservation: document.getElementById('input-reservation').value,
-          breakTime: document.getElementById('input-breaktime').value,
-          offDay: document.getElementById('input-offday').value
-        };
-        db.ref('jeju_trip_data/places').push(newPlace);
-      }
-
-      clearForm();
-      switchTab('list');
-    }
-
-    function deletePlace(key) {
-      db.ref(`jeju_trip_data/places/${key}`).remove();
-    }
-
-    function deleteHotel() {
-      db.ref('jeju_trip_data/hotel').remove();
-    }
-
-    function switchTab(tab) {
-      document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
-      document.getElementById('tab-add').style.display = tab === 'add' ? 'block' : 'none';
-      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', (tab === 'list' && idx === 0) || (tab === 'add' && idx === 1));
-      });
-    }
-
-    function filterCategory(cat) {
-      currentCategory = cat;
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText === cat);
-      });
-      render();
-    }
-
-    function toggleHotelMode() {
-      const isHotel = document.getElementById('input-category').value === '숙소';
-      ['group-rating', 'group-nokids', 'group-reservation', 'group-breaktime', 'group-offday'].forEach(id => {
-        document.getElementById(id).style.display = isHotel ? 'none' : 'block';
-      });
-    }
-
-    function clearForm() {
-      document.querySelectorAll('#tab-add input').forEach(i => i.value = '');
-    }
-
-    window.onload = initMap;
-  </script>
+window.onload=initMap;
+</script>
 </body>
 </html>
