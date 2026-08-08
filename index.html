@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 가족 제주도 여행🌴</title>
-    <!-- https:를 명시하여 GitHub Pages 보안 차단 방지 -->
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
+    <!-- 구글 지도 API 로드 -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f0f2f5; color: #333; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
@@ -72,7 +72,7 @@
         <button class="tab-btn" onclick="changeMainTab('Day 3')">Day 3</button>
     </div>
 
-    <!-- 햄버거 메뉴 패널 (장소 등록/수정 폼) -->
+    <!-- 햄버거 메뉴 패널 (장소 등록/수정) -->
     <aside id="sidePanel" class="side-panel">
         <div class="panel-header">
             <h2 id="panelTitle">장소 선택 및 등록</h2>
@@ -117,18 +117,18 @@
                 <input type="hidden" id="selectedPicker" value="유리">
             </div>
 
-            <!-- 장소 검색 -->
+            <!-- 도로명 주소 또는 장소 검색 -->
             <div class="form-group">
-                <label>장소 검색 (주소/명칭)</label>
+                <label>도로명 주소 / 장소 검색</label>
                 <div class="search-row">
-                    <input type="text" id="searchInput" placeholder="예: 오설록, 애월 카페">
-                    <button type="button" onclick="searchPlaceKeyword()" class="sub-btn">검색</button>
+                    <input type="text" id="searchInput" placeholder="예: 제주시 첨단로 242 또는 오설록">
+                    <button type="button" onclick="searchAddress()" class="sub-btn">주소검색</button>
                 </div>
             </div>
 
             <div class="form-group">
                 <label>선택된 장소 이름</label>
-                <input type="text" id="placeName" placeholder="검색해서 장소를 선택하세요" required readonly>
+                <input type="text" id="placeName" placeholder="검색 후 자동으로 채워집니다" required>
                 <input type="hidden" id="lat">
                 <input type="hidden" id="lng">
             </div>
@@ -205,30 +205,53 @@
         let markers = [];
         let currentTab = 'Day 1';
 
-        // 페이지 로드 시 카카오 지도 초기화 방어 로직
-        window.onload = function() {
-            try {
-                if (typeof kakao === 'object' && kakao.maps) {
-                    kakao.maps.load(() => {
-                        const container = document.getElementById('map');
-                        const options = {
-                            center: new kakao.maps.LatLng(33.3819, 126.5592), // 제주도 중심 좌표
-                            level: 9
-                        };
-                        map = new kakao.maps.Map(container, options);
-                        renderPlaces();
-                    });
-                } else {
-                    showMapError('카카오 지도 스크립트를 불러오지 못했습니다.');
-                }
-            } catch (err) {
-                console.error(err);
-                showMapError('지도 초기화 중 오류가 발생했습니다.');
-            }
+        // 구글 지도 초기화
+        window.initMap = function() {
+            const jejuCenter = { lat: 33.3819, lng: 126.5592 };
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 10,
+                center: jejuCenter,
+                streetViewControl: false,
+                mapTypeControl: false
+            });
+            renderPlaces();
         };
 
-        function showMapError(msg) {
-            document.getElementById('map').innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#d9534f;font-size:0.85rem;text-align:center;padding:20px;line-height:1.4;">${msg}<br>GitHub Pages 도메인 주소나 API Key를 다시 확인해주세요.</div>`;
+        // 도로명 주소 및 장소 검색 기능 (Nominatim API 활용)
+        function searchAddress() {
+            const query = document.getElementById('searchInput').value;
+            if (!query.trim()) {
+                alert('도로명 주소나 장소명을 입력해주세요!');
+                return;
+            }
+
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' 제주도')}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const item = data[0];
+                        const lat = parseFloat(item.lat);
+                        const lng = parseFloat(item.lon);
+                        
+                        const coord = { lat: lat, lng: lng };
+                        map.setCenter(coord);
+                        map.setZoom(15);
+
+                        document.getElementById('placeName').value = item.display_name.split(',')[0]; // 간소화된 이름
+                        document.getElementById('lat').value = lat;
+                        document.getElementById('lng').value = lng;
+
+                        alert(`"${item.display_name.split(',')[0]}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
+                    } else {
+                        alert('검색 결과가 없습니다. 도로명 주소를 정확히 입력해 보세요.');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('주소 검색 중 오류가 발생했습니다.');
+                });
         }
 
         // 상단 Day 탭 전환
@@ -242,7 +265,7 @@
             renderPlaces();
         }
 
-        // 햄버거 메뉴 및 추가버튼 제어
+        // 햄버거 메뉴 제어
         const sidePanel = document.getElementById('sidePanel');
         document.getElementById('menuBtn').onclick = () => sidePanel.classList.add('active');
         document.getElementById('closeBtn').onclick = () => sidePanel.classList.remove('active');
@@ -251,8 +274,6 @@
             document.getElementById('placeForm').reset();
             delete document.getElementById('placeForm').dataset.editId;
             document.getElementById('panelTitle').innerText = '장소 선택 및 등록';
-            
-            // 현재 보고 있는 탭을 기본값으로 폼에 세팅
             setActiveButtonByValue('scheduleGroup', 'selectedSchedule', currentTab);
             sidePanel.classList.add('active');
         }
@@ -270,7 +291,6 @@
             });
         }
 
-        // 버튼 그룹 선택 UI 로직
         function setupButtonGroup(containerId, inputId, isMulti = false) {
             const buttons = document.querySelectorAll(`#${containerId} button`);
             buttons.forEach(btn => {
@@ -290,32 +310,6 @@
         setupButtonGroup('pickerGroup', 'selectedPicker');
         setupButtonGroup('votersGroup', null, true);
 
-        // 카카오 장소 검색 기능
-        function searchPlaceKeyword() {
-            const keyword = document.getElementById('searchInput').value;
-            if (!keyword.trim()) {
-                alert('검색어를 입력해주세요!');
-                return;
-            }
-            if (!map || !kakao.maps.services) {
-                alert('지도가 아직 준비되지 않았습니다.');
-                return;
-            }
-            const ps = new kakao.maps.services.Places();
-            ps.keywordSearch(keyword, (data, status) => {
-                if (status === kakao.maps.services.Status.OK) {
-                    const coords = new kakao.maps.LatLng(data[0].y, data[0].x);
-                    map.setCenter(coords);
-                    document.getElementById('placeName').value = data[0].place_name;
-                    document.getElementById('lat').value = data[0].y;
-                    document.getElementById('lng').value = data[0].x;
-                    alert(`"${data[0].place_name}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
-                } else {
-                    alert('검색 결과가 없습니다.');
-                }
-            });
-        }
-
         function getEmoji(cat) {
             if (cat === 'lodging') return '🏠';
             if (cat === 'restaurant') return '🥢';
@@ -324,7 +318,7 @@
             return '📍';
         }
 
-        // 장소 목록 및 마커 렌더링 (현재 선택된 일정(Day)에 해당하는 항목만 필터링)
+        // 마커 및 목록 렌더링
         function renderPlaces() {
             const container = document.getElementById('cardsList');
             if (!container) return;
@@ -333,7 +327,6 @@
             markers.forEach(m => m.setMap(null));
             markers = [];
 
-            // 현재 선택된 탭(Day)에 해당하는 장소만 필터링
             const filteredPlaces = places.filter(p => p.schedule === currentTab);
 
             if (filteredPlaces.length === 0) {
@@ -362,18 +355,17 @@
                 container.appendChild(card);
 
                 if (p.lat && p.lng && map) {
-                    const marker = new kakao.maps.CustomOverlay({
-                        position: new kakao.maps.LatLng(p.lat, p.lng),
-                        content: `<div style="background:white; padding:4px 8px; border-radius:12px; border:2px solid #007aff; font-size:11px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2);">${emoji} ${p.name}</div>`,
-                        yAnchor: 1.5
+                    const marker = new google.maps.Marker({
+                        position: { lat: p.lat, lng: p.lng },
+                        map: map,
+                        title: p.name
                     });
-                    marker.setMap(map);
                     markers.push(marker);
                 }
             });
         }
 
-        // 폼 제출 (저장/수정)
+        // 저장 / 수정 처리
         document.getElementById('placeForm').onsubmit = (e) => {
             e.preventDefault();
             const name = document.getElementById('placeName').value;
@@ -381,7 +373,7 @@
             const lng = document.getElementById('lng').value;
 
             if (!lat || !lng) {
-                alert('장소를 검색해서 위치를 먼저 지정해주세요!');
+                alert('도로명 주소를 검색해서 위치를 먼저 지정해주세요!');
                 return;
             }
 
@@ -416,8 +408,6 @@
 
             localStorage.setItem('jeju_places', JSON.stringify(places));
             sidePanel.classList.remove('active');
-            
-            // 저장한 장소의 일정 탭으로 자동 이동해서 확인시켜주기
             changeMainTab(placeData.schedule);
         };
 
