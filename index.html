@@ -330,27 +330,31 @@
             geocoder = new google.maps.Geocoder();
             placesService = new google.maps.places.PlacesService(map);
 
-            // 파이어베이스 실시간 데이터 수신 리스너 (누가 바꾸든 즉시 반영됨)
-            db.collection("jeju_trip_data").doc("trip_state").onSnapshot((doc) => {
+            // 실시간 장소 목록 동기화
+            db.collection("jeju_places").onSnapshot((snapshot) => {
+                places = [];
+                snapshot.forEach((doc) => {
+                    places.push({ firestoreId: doc.id, ...doc.data() });
+                });
+                renderPlaces();
+            });
+
+            // 실시간 체크리스트 동기화
+            db.collection("jeju_trip_data").doc("checklist_state").onSnapshot((doc) => {
                 if (doc.exists) {
-                    const data = doc.data();
-                    places = data.places || [];
-                    checklist = data.checklist || checklist;
+                    checklist = doc.data().items || checklist;
                 } else {
-                    // 최초 실행 시 기본 데이터 업로드
-                    saveDataToCloud();
+                    saveChecklistToCloud();
                 }
                 renderPlaces();
             });
         };
 
-        // 클라우드(파이어베이스)에 데이터 동기화 저장 함수
-        function saveDataToCloud() {
-            db.collection("jeju_trip_data").doc("trip_state").set({
-                places: places,
-                checklist: checklist
+        function saveChecklistToCloud() {
+            db.collection("jeju_trip_data").doc("checklist_state").set({
+                items: checklist
             }).catch((error) => {
-                console.error("데이터 저장 실패: ", error);
+                console.error("준비물 저장 실패: ", error);
             });
         }
 
@@ -526,19 +530,20 @@
             return `약 ${minutes}분 (${distance.toFixed(1)}km)`;
         }
 
-        window.toggleQuickVote = function(placeId, name) {
-            const place = places.find(p => p.id === placeId);
+        window.toggleQuickVote = function(firestoreId, name) {
+            const place = places.find(p => p.firestoreId === firestoreId);
             if (!place) return;
-            if (!place.voters) place.voters = [];
+            let voters = place.voters || [];
 
-            const index = place.voters.indexOf(name);
+            const index = voters.indexOf(name);
             if (index > -1) {
-                place.voters.splice(index, 1);
+                voters.splice(index, 1);
             } else {
-                place.voters.push(name);
+                voters.push(name);
             }
 
-            saveDataToCloud();
+            db.collection("jeju_places").doc(firestoreId).update({ voters: voters })
+                .catch(err => console.error("투표 업데이트 실패:", err));
         };
 
         function renderPlaces() {
@@ -633,7 +638,7 @@
                 const quickVoteChipsHtml = FAMILY_MEMBERS.map(member => {
                     const isVoted = (p.voters || []).includes(member);
                     return `
-                        <button class="quick-vote-chip ${isVoted ? 'voted' : ''}" onclick="toggleQuickVote(${p.id}, '${member}')">
+                        <button class="quick-vote-chip ${isVoted ? 'voted' : ''}" onclick="toggleQuickVote('${p.firestoreId}', '${member}')">
                             ${isVoted ? '❤️' : '🤍'} ${member}
                         </button>
                     `;
@@ -644,8 +649,8 @@
                     orderControlHtml = `
                         <div class="card-actions-left">
                             <span style="font-weight:700; color:var(--primary);">#${index + 1}</span>
-                            <button class="order-btn" onclick="moveOrder(${p.id}, -1)" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲ 위로</button>
-                            <button class="order-btn" onclick="moveOrder(${p.id}, 1)" ${index === filteredPlaces.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼ 아래로</button>
+                            <button class="order-btn" onclick="moveOrder('${p.firestoreId}', -1)" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲ 위로</button>
+                            <button class="order-btn" onclick="moveOrder('${p.firestoreId}', 1)" ${index === filteredPlaces.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼ 아래로</button>
                         </div>
                     `;
                 } else {
@@ -676,8 +681,8 @@
                         <div class="card-actions">
                             ${orderControlHtml}
                             <div class="card-actions-right">
-                                <button onclick="editPlace(${p.id})">수정</button>
-                                <button onclick="deletePlace(${p.id})" style="color:#EF4444;">삭제</button>
+                                <button onclick="editPlace('${p.firestoreId}')">수정</button>
+                                <button onclick="deletePlace('${p.firestoreId}')" style="color:#EF4444;">삭제</button>
                             </div>
                         </div>
                     </div>
@@ -720,11 +725,11 @@
             }
         }
 
-        window.moveOrder = function(id, direction) {
+        window.moveOrder = function(firestoreId, direction) {
             let dayPlaces = places.filter(p => p.schedule === currentTab);
             dayPlaces.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-            const idx = dayPlaces.findIndex(p => p.id === id);
+            const idx = dayPlaces.findIndex(p => p.firestoreId === firestoreId);
             if (idx < 0) return;
 
             const targetIdx = idx + direction;
@@ -734,11 +739,13 @@
             dayPlaces[idx] = dayPlaces[targetIdx];
             dayPlaces[targetIdx] = temp;
 
+            const batch = db.batch();
             dayPlaces.forEach((p, i) => {
-                p.order = i;
+                const docRef = db.collection("jeju_places").doc(p.firestoreId);
+                batch.update(docRef, { order: i });
             });
 
-            saveDataToCloud();
+            batch.commit().catch(err => console.error("순서 변경 실패:", err));
         };
 
         function addChecklistItem() {
@@ -746,20 +753,21 @@
             const text = input.value.trim();
             if (!text) return;
             checklist.push({ id: Date.now(), text: text, checked: false });
-            saveDataToCloud();
+            saveChecklistToCloud();
+            input.value = '';
         }
 
         function toggleCheckItem(id) {
             const item = checklist.find(x => x.id === id);
             if (item) {
                 item.checked = !item.checked;
-                saveDataToCloud();
+                saveChecklistToCloud();
             }
         }
 
         function deleteCheckItem(id) {
             checklist = checklist.filter(x => x.id !== id);
-            saveDataToCloud();
+            saveChecklistToCloud();
         }
 
         document.getElementById('placeForm').onsubmit = (e) => {
@@ -775,74 +783,57 @@
 
             const resChecked = Array.from(document.querySelectorAll('input[name="res"]:checked')).map(el => el.value);
             const selectedSchedule = document.getElementById('selectedSchedule').value;
-            const editId = document.getElementById('placeForm').dataset.editId;
+            const editFirestoreId = document.getElementById('placeForm').dataset.editFirestoreId;
             
-            if (editId) {
-                const idx = places.findIndex(x => x.id == editId);
-                if (idx > -1) {
-                    places[idx] = {
-                        ...places[idx],
-                        schedule: selectedSchedule,
-                        category: document.getElementById('selectedCategory').value,
-                        picker: document.getElementById('selectedPicker').value,
-                        name: name,
-                        lat: Number(lat),
-                        lng: Number(lng),
-                        photoUrl: document.getElementById('photoUrl').value,
-                        rating: document.getElementById('rating').value,
-                        reservation: resChecked.join(', '),
-                        openTime: document.getElementById('openTime').value,
-                        closeTime: document.getElementById('closeTime').value,
-                        breakStart: document.getElementById('breakStart').value,
-                        breakEnd: document.getElementById('breakEnd').value,
-                        closedDaySelect: document.getElementById('closedDaySelect').value,
-                        parkingSelect: document.getElementById('parkingSelect').value,
-                        noKids: document.querySelector('input[name="noKids"]:checked').value,
-                        memo: document.getElementById('memo').value
-                    };
-                }
+            const placeData = {
+                schedule: selectedSchedule,
+                category: document.getElementById('selectedCategory').value,
+                picker: document.getElementById('selectedPicker').value,
+                name: name,
+                lat: Number(lat),
+                lng: Number(lng),
+                photoUrl: document.getElementById('photoUrl').value,
+                rating: document.getElementById('rating').value,
+                reservation: resChecked.join(', '),
+                openTime: document.getElementById('openTime').value,
+                closeTime: document.getElementById('closeTime').value,
+                breakStart: document.getElementById('breakStart').value,
+                breakEnd: document.getElementById('breakEnd').value,
+                closedDaySelect: document.getElementById('closedDaySelect').value,
+                parkingSelect: document.getElementById('parkingSelect').value,
+                noKids: document.querySelector('input[name="noKids"]:checked').value,
+                memo: document.getElementById('memo').value
+            };
+
+            if (editFirestoreId) {
+                db.collection("jeju_places").doc(editFirestoreId).update(placeData)
+                    .then(() => {
+                        sidePanel.classList.remove('active');
+                    })
+                    .catch(err => alert("수정 실패: " + err.message));
             } else {
                 const sameDayPlaces = places.filter(p => p.schedule === selectedSchedule);
-                const newOrder = sameDayPlaces.length;
+                placeData.id = Date.now();
+                placeData.voters = [];
+                placeData.order = sameDayPlaces.length;
 
-                const placeData = {
-                    id: Date.now(),
-                    schedule: selectedSchedule,
-                    category: document.getElementById('selectedCategory').value,
-                    picker: document.getElementById('selectedPicker').value,
-                    name: name,
-                    lat: Number(lat),
-                    lng: Number(lng),
-                    photoUrl: document.getElementById('photoUrl').value,
-                    rating: document.getElementById('rating').value,
-                    reservation: resChecked.join(', '),
-                    openTime: document.getElementById('openTime').value,
-                    closeTime: document.getElementById('closeTime').value,
-                    breakStart: document.getElementById('breakStart').value,
-                    breakEnd: document.getElementById('breakEnd').value,
-                    closedDaySelect: document.getElementById('closedDaySelect').value,
-                    parkingSelect: document.getElementById('parkingSelect').value,
-                    noKids: document.querySelector('input[name="noKids"]:checked').value,
-                    memo: document.getElementById('memo').value,
-                    voters: [],
-                    order: newOrder
-                };
-                places.push(placeData);
+                db.collection("jeju_places").add(placeData)
+                    .then(() => {
+                        sidePanel.classList.remove('active');
+                    })
+                    .catch(err => alert("저장 실패: " + err.message));
             }
-
-            saveDataToCloud();
-            sidePanel.classList.remove('active');
         };
 
-        window.deletePlace = (id) => {
+        window.deletePlace = (firestoreId) => {
             if (confirm('정말 삭제하시겠습니까?')) {
-                places = places.filter(p => p.id !== id);
-                saveDataToCloud();
+                db.collection("jeju_places").doc(firestoreId).delete()
+                    .catch(err => alert("삭제 실패: " + err.message));
             }
         };
 
-        window.editPlace = (id) => {
-            const p = places.find(x => x.id === id);
+        window.editPlace = (firestoreId) => {
+            const p = places.find(x => x.firestoreId === firestoreId);
             if (!p) return;
 
             document.getElementById('panelTitle').innerText = '장소 수정';
@@ -863,12 +854,12 @@
             document.getElementById('breakEnd').value = p.breakEnd || '';
             document.getElementById('closedDaySelect').value = p.closedDaySelect || '연중무휴';
             document.getElementById('parkingSelect').value = p.parkingSelect || '주차 가능 🚗';
-            document.getElementById('memo').value = p.memo;
+            document.getElementById('memo').value = p.memo || '';
 
             const noKidsRadio = document.querySelector(`input[name="noKids"][value="${p.noKids || 'yes_kids'}"]`);
             if (noKidsRadio) noKidsRadio.checked = true;
 
-            document.getElementById('placeForm').dataset.editId = id;
+            document.getElementById('placeForm').dataset.editFirestoreId = firestoreId;
             sidePanel.classList.add('active');
         };
     </script>
