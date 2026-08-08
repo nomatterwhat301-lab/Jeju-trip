@@ -5,41 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>제주도 가족 여행 지도 🌴</title>
     <link rel="stylesheet" href="style.css">
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c"></script>
+    <!-- 카카오 지도 API (라이브러리 포함: 장소 검색용 services 추가) -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
 </head>
 <body>
+    <!-- 상단 헤더 & 햄버거 버튼 -->
     <header>
-        <h1>제주도 가족 여행 🌴</h1>
+        <button id="menuBtn" class="menu-btn">☰</button>
+        <h1>제주도 가족 여행 지도 🌴</h1>
     </header>
-    <main>
-        <div id="map"></div>
-        <div class="controls">
-            <select id="dayFilter"><option value="all">일정별 보기</option><option value="day1">1일차</option><option value="day2">2일차</option><option value="day3">3일차</option></select>
-            <button id="addBtn" class="primary-btn">+ 새 장소 추가</button>
+
+    <!-- 햄버거 사이드 메뉴 -->
+    <nav id="sideMenu" class="side-menu">
+        <div class="menu-header">
+            <h2>메뉴 & 필터</h2>
+            <button id="closeMenuBtn" class="close-btn">&times;</button>
         </div>
-        <div id="placeCards"></div>
+        <div class="menu-content">
+            <h3>📅 일정별 모아보기</h3>
+            <select id="dayFilter" class="menu-select">
+                <option value="all">전체 일정 보기</option>
+                <option value="day1">1일차</option>
+                <option value="day2">2일차</option>
+                <option value="day3">3일차</option>
+            </select>
+
+            <h3>📂 카테고리 필터</h3>
+            <select id="categoryFilter" class="menu-select">
+                <option value="all">모든 카테고리</option>
+                <option value="lodging">집(숙소)</option>
+                <option value="restaurant">숟가락/젓가락(음식점)</option>
+                <option value="cafe">커피잔(카페)</option>
+                <option value="tour">야자수(관광지)</option>
+            </select>
+
+            <button id="addPlaceBtn" class="primary-btn" style="margin-top: 20px;">+ 새 장소 직접 추가하기</button>
+        </div>
+    </nav>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main>
+        <!-- 지도가 화면 중심에 크게 위치 -->
+        <div id="map"></div>
+
+        <!-- 장소 검색 영역 -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="장소를 검색해 보세요 (예: 애월 카페, 흑돼지)">
+            <button onclick="searchPlaces()" class="search-btn">검색</button>
+        </div>
+
+        <!-- 검색 결과 또는 선택된 장소 목록 -->
+        <section id="placeListContainer">
+            <h2>우리 가족 픽한 장소 목록</h2>
+            <div id="placeCards" class="card-grid"></div>
+        </section>
     </main>
 
+    <!-- 장소 상세 입력 및 수정 모달 창 -->
     <div id="placeModal" class="modal">
         <div class="modal-content">
-            <h2 id="modalTitle">장소 추가</h2>
+            <span class="modal-close">&times;</span>
+            <h2 id="modalTitle">장소 상세 정보 입력</h2>
             <form id="placeForm">
-                <input type="hidden" id="placeId">
-                <input type="text" id="name" placeholder="장소 이름" required>
-                <select id="category"><option value="lodging">숙소</option><option value="restaurant">음식점</option><option value="cafe">카페</option><option value="tour">관광지</option></select>
-                <select id="schedule"><option value="day1">1일차</option><option value="day2">2일차</option><option value="day3">3일차</option></select>
-                <select id="picker"><option value="지현">지현</option><option value="지숙">지숙</option><option value="연정">연정</option><option value="미경">미경</option><option value="유리">유리</option><option value="주은">주은</option></select>
-                <input type="number" id="rating" placeholder="별점 (1~5)" min="1" max="5" step="0.5">
-                <input type="text" id="reservation" placeholder="예약 가능 여부">
-                <input type="text" id="hours" placeholder="영업시간 / 휴무일">
-                <label><input type="checkbox" id="noKids"> 노키즈존</label>
-                <textarea id="memo" placeholder="메모"></textarea>
-                <input type="text" id="lat" placeholder="위도 (예: 33.45)" required>
-                <input type="text" id="lng" placeholder="경도 (예: 126.57)" required>
+                <input type="hidden" id="modalLat">
+                <input type="hidden" id="modalLng">
+                
+                <label>장소 이름: <input type="text" id="modalName" required readonly></label>
+                <label>카테고리: 
+                    <select id="modalCategory" required>
+                        <option value="lodging">집 (숙소)</option>
+                        <option value="restaurant">음식점</option>
+                        <option value="cafe">카페</option>
+                        <option value="tour">관광지</option>
+                    </select>
+                </label>
+                <label>일정 선택: 
+                    <select id="modalSchedule" required>
+                        <option value="day1">1일차</option>
+                        <option value="day2">2일차</option>
+                        <option value="day3">3일차</option>
+                    </select>
+                </label>
+                <label>픽한 사람: 
+                    <select id="modalPicker" required>
+                        <option value="지현">지현</option>
+                        <option value="지숙">지숙</option>
+                        <option value="연정">연정</option>
+                        <option value="미경">미경</option>
+                        <option value="유리">유리</option>
+                        <option value="주은">주은</option>
+                    </select>
+                </label>
+                <label>별점 (1~5): <input type="number" id="modalRating" min="1" max="5" step="0.5" value="5"></label>
+                <label>예약 여부: <input type="text" id="modalReservation" placeholder="예: 예약필수 / 현장결제"></label>
+                <label>영업시간 & 휴무: <input type="text" id="modalHours" placeholder="예: 10:00~20:00 (수요일 휴무)"></label>
+                <label class="checkbox-label"><input type="checkbox" id="modalNoKids"> 노키즈존 여부 (체크시 Yes)</label>
+                <label>메모: <textarea id="modalMemo" placeholder="가족들에게 전할 메모를 남겨주세요"></textarea></label>
+                
                 <button type="submit" class="primary-btn">저장하기</button>
             </form>
         </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
