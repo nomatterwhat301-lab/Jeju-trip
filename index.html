@@ -51,27 +51,28 @@
       flex: 1;
       height: 100%;
     }
-    .filter-container {
-      padding: 10px;
+    .filter-container, .day-container {
+      padding: 8px 10px;
       background: #f8f9fa;
       border-bottom: 1px solid #eee;
       display: flex;
       gap: 5px;
       flex-wrap: wrap;
+      align-items: center;
     }
-    .filter-btn {
-      padding: 6px 12px;
+    .filter-btn, .day-btn {
+      padding: 5px 10px;
       border: 1px solid #ccc;
       background: #fff;
       border-radius: 20px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       transition: all 0.2s;
     }
-    .filter-btn.active {
-      background: #007bff;
+    .filter-btn.active, .day-btn.active {
+      background: #28a745;
       color: white;
-      border-color: #007bff;
+      border-color: #28a745;
     }
     #place-list {
       flex: 1;
@@ -101,6 +102,23 @@
       font-size: 0.85rem;
       color: #666;
       line-height: 1.4;
+    }
+    .pick-btn {
+      background: #fff0f6;
+      border: 1px solid #ffdeeb;
+      color: #d63384;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-top: 6px;
+    }
+    .pick-btn.picked {
+      background: #d63384;
+      color: white;
     }
     .form-container {
       padding: 15px;
@@ -160,12 +178,22 @@
 <body>
 
   <header>
-    <span>🌴 제주도 가족 여행 지도</span>
+    <span>🌴 제주도 가족 여행 지도 (2박 3일)</span>
     <span style="font-size: 0.8rem; font-weight: normal;">실시간 동기화 모드</span>
   </header>
 
   <div class="main-container">
     <div id="sidebar">
+      <!-- 2박 3일 일정 필터 -->
+      <div class="day-container">
+        <span style="font-size:0.8rem; font-weight:bold;">일정:</span>
+        <button class="day-btn active" onclick="filterDay('전체')">전체</button>
+        <button class="day-btn" onclick="filterDay('1일차')">1일차</button>
+        <button class="day-btn" onclick="filterDay('2일차')">2일차</button>
+        <button class="day-btn" onclick="filterDay('3일차')">3일차</button>
+      </div>
+
+      <!-- 카테고리 필터 -->
       <div class="filter-container">
         <button class="filter-btn active" onclick="filterCategory('전체')">전체</button>
         <button class="filter-btn" onclick="filterCategory('숙소')">숙소</button>
@@ -187,19 +215,39 @@
         <label>주소 *</label>
         <input type="text" id="input-address" placeholder="클릭하여 주소 검색" readonly onclick="execDaumPostcode()" style="cursor:pointer; background:#f9f9f9;">
         
-        <label>카테고리</label>
-        <select id="input-category">
-          <option value="숙소">숙소</option>
-          <option value="음식점">음식점</option>
-          <option value="카페">카페</option>
-          <option value="관광지">관광지</option>
-        </select>
-        
-        <label>노키즈존 여부</label>
-        <select id="input-nokids">
-          <option value="예스키즈존">예스키즈존 (아이 동반 가능)</option>
-          <option value="노키즈존">노키즈존 (아이 동반 불가)</option>
-        </select>
+        <div style="display:flex; gap:8px;">
+          <div style="flex:1;">
+            <label>카테고리</label>
+            <select id="input-category">
+              <option value="숙소">숙소</option>
+              <option value="음식점">음식점</option>
+              <option value="카페">카페</option>
+              <option value="관광지">관광지</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label>여행 일정</label>
+            <select id="input-day">
+              <option value="1일차">1일차</option>
+              <option value="2일차">2일차</option>
+              <option value="3일차">3일차</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <div style="flex:1;">
+            <label>별점</label>
+            <input type="number" id="input-rating" min="1" max="5" step="0.1" value="4.5">
+          </div>
+          <div style="flex:1;">
+            <label>노키즈존 여부</label>
+            <select id="input-nokids">
+              <option value="예스키즈존">예스키즈존</option>
+              <option value="노키즈존">노키즈존</option>
+            </select>
+          </div>
+        </div>
         
         <label>정기 휴무일</label>
         <div class="checkbox-group">
@@ -214,7 +262,7 @@
         </div>
 
         <label>예약 가능 여부</label>
-        <input type="text" id="input-reservation" placeholder="예: 네이버 예약 필수 / 전화 예약">
+        <input type="text" id="input-reservation" placeholder="예: 네이버 예약 필수">
         
         <label>브레이크 타임</label>
         <input type="text" id="input-breaktime" placeholder="예: 15:00 ~ 17:00">
@@ -251,8 +299,12 @@
     let markers = [];
     let allPlaces = [];
     let currentCategory = '전체';
+    let currentDay = '전체';
     let selectedLat = 33.3616;
     let selectedLng = 126.5292;
+    
+    // 사용자 이름 설정
+    const userName = "유리";
 
     function initMap() {
       map = L.map('map').setView([33.3616, 126.5292], 10);
@@ -261,7 +313,6 @@
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
 
-      // Firebase 실시간 데이터 동기화 리스너
       db.ref('places').on('value', (snapshot) => {
         const data = snapshot.val();
         allPlaces = [];
@@ -279,12 +330,10 @@
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // 카카오 주소 검색 API 연동
     function execDaumPostcode() {
       new daum.Postcode({
         oncomplete: function(data) {
           document.getElementById('input-address').value = data.address;
-          // 임시 좌표 부여 (실제 서비스 연동 시 Geocoding 활용 가능)
           selectedLat = 33.3616 + (Math.random() - 0.5) * 0.2;
           selectedLng = 126.5292 + (Math.random() - 0.5) * 0.2;
         }
@@ -295,9 +344,10 @@
       const name = document.getElementById('input-name').value;
       const address = document.getElementById('input-address').value;
       const category = document.getElementById('input-category').value;
+      const day = document.getElementById('input-day').value;
+      const rating = document.getElementById('input-rating').value;
       const noKids = document.getElementById('input-nokids').value;
       
-      // 체크된 휴무일 수집
       const checkedDays = [];
       document.querySelectorAll('input[name="offday"]:checked').forEach(cb => {
         checkedDays.push(cb.value);
@@ -315,30 +365,50 @@
       }
 
       const newPlace = {
-        name, address, category, noKids, offDay, reservation, breakTime, parking, memo,
+        name, address, category, day, rating, noKids, offDay, reservation, breakTime, parking, memo,
         lat: selectedLat,
-        lng: selectedLng
+        lng: selectedLng,
+        picks: {}
       };
 
       db.ref('places').push(newPlace, (error) => {
         if (!error) {
-          // 입력창 초기화
           document.getElementById('input-name').value = "";
           document.getElementById('input-address').value = "";
-          document.getElementById('input-nokids').selectedIndex = 0;
-          document.querySelectorAll('input[name="offday"]').forEach(cb => cb.checked = false);
           document.getElementById('input-reservation').value = "";
           document.getElementById('input-breaktime').value = "";
           document.getElementById('input-parking').value = "";
           document.getElementById('input-memo').value = "";
+          document.querySelectorAll('input[name="offday"]').forEach(cb => cb.checked = false);
+        }
+      });
+    }
+
+    function togglePick(id, event) {
+      event.stopPropagation();
+      const placeRef = db.ref(`places/${id}/picks`);
+      placeRef.once('value', (snapshot) => {
+        const picks = snapshot.val() || {};
+        if (picks[userName]) {
+          db.ref(`places/${id}/picks/${userName}`).remove();
+        } else {
+          db.ref(`places/${id}/picks/${userName}`).set(true);
         }
       });
     }
 
     function filterCategory(category) {
       currentCategory = category;
-      document.querySelectorAll('.filter-btn').forEach(btn => {
+      document.querySelectorAll('.filter-container .filter-btn').forEach(btn => {
         btn.classList.toggle('active', btn.textContent === category);
+      });
+      renderPlaces();
+    }
+
+    function filterDay(day) {
+      currentDay = day;
+      document.querySelectorAll('.day-container .day-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === day);
       });
       renderPlaces();
     }
@@ -347,18 +417,25 @@
       const listContainer = document.getElementById("place-list");
       listContainer.innerHTML = "";
       
-      // 기존 지도 마커 제거
       markers.forEach(marker => map.removeLayer(marker));
       markers = [];
 
-      const filtered = allPlaces.filter(p => currentCategory === '전체' || p.category === currentCategory);
+      const filtered = allPlaces.filter(p => {
+        const matchCat = (currentCategory === '전체' || p.category === currentCategory);
+        const matchDay = (currentDay === '전체' || p.day === currentDay);
+        return matchCat && matchDay;
+      });
 
       filtered.forEach(place => {
         const card = document.createElement("div");
         card.className = "card";
 
+        const picks = place.picks || {};
+        const pickNames = Object.keys(picks);
+        const isPickedByMe = picks[userName];
+
         card.innerHTML = `
-          <h3>${escapeHtml(place.name)} <span style="font-size:0.75rem; color:#007bff; font-weight:normal;">[${escapeHtml(place.category)}]</span></h3>
+          <h3>${escapeHtml(place.name)} <span style="font-size:0.75rem; color:#28a745; font-weight:normal;">[${escapeHtml(place.category)}] [${escapeHtml(place.day || '1일차')}]</span> <span style="float:right; font-size:0.85rem; color:#f59f00;">★ ${place.rating || '4.0'}</span></h3>
           <div class="meta">
             ${escapeHtml(place.address)}<br>
             ${place.noKids ? "• 노키즈존 여부: " + escapeHtml(place.noKids) + "<br>" : ""}
@@ -367,10 +444,12 @@
             ${place.breakTime ? "• 브레이크타임: " + escapeHtml(place.breakTime) + "<br>" : ""}
             ${place.parking ? "• 주차: " + escapeHtml(place.parking) + "<br>" : ""}
             ${place.memo ? "• 메모: " + escapeHtml(place.memo) + "<br>" : ""}
+            <button class="pick-btn ${isPickedByMe ? 'picked' : ''}" onclick="togglePick('${place.id}', event)">
+              ❤️ 찜하기 (${pickNames.length}) ${pickNames.length > 0 ? ': ' + pickNames.join(', ') : ''}
+            </button>
           </div>
         `;
 
-        // 카드 클릭 시 해당 마커로 지도 이동
         card.onclick = () => {
           map.setView([place.lat, place.lng], 14);
         };
