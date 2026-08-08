@@ -7,83 +7,99 @@
     <!-- 구글 지도 API 로드 -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAndcXXxmTbZO-HkdFfOuQyl5MniHISmKs&libraries=places&language=ko"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #f0f2f5; color: #333; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        :root {
+            --primary: #FF5E5B;
+            --primary-light: #FFF0F0;
+            --bg-color: #F8F9FA;
+            --text-main: #2D3436;
+            --text-sub: #636E72;
+            --border-color: #DFE6E9;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg-color); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
         /* 상단바 */
-        header { display: flex; align-items: center; justify-content: space-between; background: #007aff; color: white; padding: 14px 16px; width: 100%; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
+        header { display: flex; align-items: center; justify-content: space-between; background: #ffffff; color: var(--text-main); padding: 14px 20px; width: 100%; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex-shrink: 0; }
         .header-left { display: flex; align-items: center; gap: 12px; }
-        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
-        header h1 { font-size: 1.1rem; }
-        .add-place-trigger { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+        .menu-btn { background: none; border: none; color: var(--text-main); font-size: 22px; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; }
+        header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.5px; }
+        .add-place-trigger { background: var(--primary); border: none; color: white; padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 94, 91, 0.3); transition: 0.2s; }
+        .add-place-trigger:active { transform: scale(0.95); }
 
         /* 메인 일정 전환 탭 */
-        .main-tab-bar { display: flex; background: white; padding: 10px 16px; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-shrink: 0; overflow-x: auto; }
-        .tab-btn { flex: 1; padding: 8px 10px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; color: #666; text-align: center; transition: 0.2s; white-space: nowrap; }
-        .tab-btn.active { background: #007aff; color: white; border-color: #007aff; }
+        .main-tab-bar { display: flex; background: #ffffff; padding: 10px 16px; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+        .main-tab-bar::-webkit-scrollbar { display: none; }
+        .tab-btn { flex: 1; padding: 10px 14px; border: none; background: #F1F2F6; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--text-sub); text-align: center; transition: all 0.2s ease; white-space: nowrap; }
+        .tab-btn.active { background: var(--text-main); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
         /* 햄버거 사이드 패널 (장소 등록/수정) */
-        .side-panel { position: fixed; top: 0; left: -380px; width: 360px; height: 100%; background: white; z-index: 2000; transition: 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.2); overflow-y: auto; padding: 20px; }
+        .side-panel { position: fixed; top: 0; left: -420px; width: 100%; max-width: 380px; height: 100%; background: white; z-index: 2000; transition: 0.35s cubic-bezier(0.1, 0.9, 0.2, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.1); overflow-y: auto; padding: 24px; }
         .side-panel.active { left: 0; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #666; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .panel-header h2 { font-size: 1.25rem; font-weight: 700; }
+        .close-btn { background: #F1F2F6; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; color: var(--text-sub); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 
         /* 폼 스타일 */
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #555; }
-        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; background: #fff; }
-        .form-group textarea { height: 60px; resize: none; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-main); }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.9rem; background: #FAFAFA; transition: 0.2s; outline: none; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 3px rgba(255, 94, 91, 0.1); }
+        .form-group textarea { height: 70px; resize: none; }
 
-        .btn-select-group, .tag-select-group { display: flex; flex-wrap: wrap; gap: 6px; }
-        .sel-btn, .tag-btn, .vote-tag { padding: 6px 12px; border: 1px solid #ccc; background: #fff; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
-        .sel-btn.active, .tag-btn.active, .vote-tag.active { background: #007aff; color: white; border-color: #007aff; font-weight: bold; }
+        .btn-select-group, .tag-select-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .sel-btn, .tag-btn, .vote-tag { padding: 8px 14px; border: 1px solid var(--border-color); background: #ffffff; border-radius: 10px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--text-sub); transition: 0.2s; }
+        .sel-btn.active, .tag-btn.active, .vote-tag.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); font-weight: 600; }
 
-        .search-row { display: flex; gap: 6px; }
-        .sub-btn { background: #34c759; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; flex-shrink: 0; }
+        .search-row { display: flex; gap: 8px; }
+        .sub-btn { background: #2D3436; color: white; border: none; padding: 0 16px; border-radius: 12px; cursor: pointer; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; transition: 0.2s; }
 
-        .checkbox-group, .radio-group { display: flex; gap: 12px; font-size: 0.85rem; align-items: center; flex-wrap: wrap; }
-        .primary-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .checkbox-group, .radio-group { display: flex; gap: 16px; font-size: 0.9rem; align-items: center; flex-wrap: wrap; }
+        .checkbox-group label, .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: 400; cursor: pointer; }
+        .primary-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(255, 94, 91, 0.3); transition: 0.2s; }
+        .primary-btn:active { transform: scale(0.98); }
 
-        /* 메인 화면 */
-        main { width: 100%; max-width: 800px; margin: 0 auto; padding: 12px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        /* 메인 화면 컨테이너 */
+        main { width: 100%; max-width: 768px; margin: 0 auto; padding: 16px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
         #mapContainer { flex-shrink: 0; }
-        #map { width: 100%; height: 40vh; min-height: 250px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: #e5e3df; }
+        #map { width: 100%; height: 35vh; min-height: 220px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #e5e3df; }
 
-        .place-list-view h2 { font-size: 1rem; margin-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
+        .place-list-view h2 { font-size: 1.05rem; margin-bottom: 12px; color: var(--text-main); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
         
-        /* 정렬 버튼 영역 */
-        .list-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.85rem; }
-        .sort-select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 0.85rem; cursor: pointer; }
+        .list-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; }
+        .sort-select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 10px; background: white; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; color: var(--text-main); }
 
-        /* 카드 디자인 */
-        .card-item { background: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; gap: 12px; align-items: flex-start; border-left: 6px solid #ccc; }
-        .card-item.lodging { border-left-color: #2196f3; background-color: #f4f8fb; }
-        .card-item.restaurant { border-left-color: #ff9800; background-color: #fcf8f4; }
-        .card-item.cafe { border-left-color: #795548; background-color: #f8f6f5; }
-        .card-item.tour { border-left-color: #4caf50; background-color: #f4f8f4; }
+        /* 카드 디자인 고도화 */
+        .card-item { background: white; padding: 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; gap: 14px; align-items: flex-start; border: 1px solid rgba(0,0,0,0.04); transition: 0.2s; }
+        .card-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
 
-        .place-thumb { width: 75px; height: 75px; border-radius: 8px; object-fit: cover; background: #e0e0e0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #666; text-align: center; }
-        .card-body { flex: 1; }
-        .card-item h3 { font-size: 0.95rem; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .place-thumb { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; background: #F1F2F6; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-sub); text-align: center; font-weight: 500; }
+        .card-body { flex: 1; min-width: 0; }
+        .card-item h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; color: var(--text-main); }
         
-        /* 카드 내 유틸 버튼 및 액션 */
-        .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; font-size: 0.8rem; }
+        .card-info-text { font-size: 0.85rem; color: var(--text-sub); line-height: 1.6; }
+        .card-info-text b { color: var(--text-main); font-weight: 600; }
+
+        .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top: 1px solid #F1F2F6; padding-top: 10px; font-size: 0.8rem; }
         .card-actions-left { display: flex; gap: 8px; align-items: center; }
-        .card-actions-right { display: flex; gap: 10px; }
-        .card-actions button { background: none; border: none; color: #007aff; cursor: pointer; font-weight: bold; }
-        .order-btn { background: #f0f2f5 !important; border: 1px solid #ccc !important; padding: 2px 6px; border-radius: 4px; color: #333 !important; font-size: 0.75rem; }
-
-        /* 체크리스트 전용 스타일 */
-        .checklist-view { background: white; padding: 16px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .checklist-add-row { display: flex; gap: 8px; margin-bottom: 15px; }
-        .checklist-add-row input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
-        .checklist-add-row button { background: #34c759; color: white; border: none; padding: 0 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .card-actions-right { display: flex; gap: 12px; }
+        .card-actions button { background: none; border: none; color: var(--text-sub); cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .card-actions button:hover { color: var(--primary); }
         
-        .check-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
-        .check-item-left { display: flex; align-items: center; gap: 10px; }
-        .check-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
-        .check-item.checked span { text-decoration: line-through; color: #aaa; }
-        .delete-check-btn { background: none; border: none; color: #ff3b30; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+        .order-btn { background: #F1F2F6 !important; border: none !important; padding: 4px 8px; border-radius: 6px; color: var(--text-main) !important; font-size: 0.75rem; font-weight: 600; }
+        .order-btn:hover:not(:disabled) { background: #dfe4ea !important; }
+
+        /* 체크리스트 스타일 */
+        .checklist-view { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .checklist-add-row { display: flex; gap: 8px; margin-bottom: 16px; }
+        .checklist-add-row input { flex: 1; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.9rem; outline: none; }
+        .checklist-add-row button { background: var(--primary); color: white; border: none; padding: 0 18px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        
+        .check-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F1F2F6; font-size: 0.9rem; }
+        .check-item-left { display: flex; align-items: center; gap: 12px; }
+        .check-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+        .check-item.checked span { text-decoration: line-through; color: #b2bec3; }
+        .delete-check-btn { background: none; border: none; color: #ff7675; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -91,7 +107,7 @@
     <header>
         <div class="header-left">
             <button id="menuBtn" class="menu-btn">☰</button>
-            <h1>우리 가족 제주도 여행🌴</h1>
+            <h1>우리 가족 제주도 여행 ✈️</h1>
         </div>
         <button id="topAddBtn" class="add-place-trigger" onclick="openSidebarForAdd()">+ 장소추가</button>
     </header>
@@ -102,20 +118,20 @@
         <button class="tab-btn" onclick="changeMainTab('Day 1')">Day 1</button>
         <button class="tab-btn" onclick="changeMainTab('Day 2')">Day 2</button>
         <button class="tab-btn" onclick="changeMainTab('Day 3')">Day 3</button>
-        <button class="tab-btn" onclick="changeMainTab('Checklist')">여행 준비물</button>
+        <button class="tab-btn" onclick="changeMainTab('Checklist')">준비물</button>
     </div>
 
     <!-- 햄버거 메뉴 패널 (장소 등록/수정) -->
     <aside id="sidePanel" class="side-panel">
         <div class="panel-header">
-            <h2 id="panelTitle">장소 선택 및 등록</h2>
+            <h2 id="panelTitle">장소 등록</h2>
             <button id="closeBtn" class="close-btn">&times;</button>
         </div>
         
-        <form id="placeForm" class="panel-form">
+        <form id="placeForm">
             <div class="form-group">
                 <label>일정 배정</label>
-                <select id="selectedSchedule" class="sort-select" style="width:100%; padding:8px;">
+                <select id="selectedSchedule" class="sort-select" style="width:100%;">
                     <option value="미배정">미배정 (List에만 보관)</option>
                     <option value="Day 1">Day 1</option>
                     <option value="Day 2">Day 2</option>
@@ -126,10 +142,10 @@
             <div class="form-group">
                 <label>카테고리</label>
                 <div class="btn-select-group" id="categoryGroup">
-                    <button type="button" class="sel-btn active" data-value="lodging">숙소🏠</button>
-                    <button type="button" class="sel-btn" data-value="restaurant">음식점🥢</button>
-                    <button type="button" class="sel-btn" data-value="cafe">카페☕</button>
-                    <button type="button" class="sel-btn" data-value="tour">관광지🌴</button>
+                    <button type="button" class="sel-btn active" data-value="lodging">숙소 🏠</button>
+                    <button type="button" class="sel-btn" data-value="restaurant">음식점 🥢</button>
+                    <button type="button" class="sel-btn" data-value="cafe">카페 ☕</button>
+                    <button type="button" class="sel-btn" data-value="tour">관광지 🌴</button>
                 </div>
                 <input type="hidden" id="selectedCategory" value="lodging">
             </div>
@@ -148,16 +164,16 @@
             </div>
 
             <div class="form-group">
-                <label>장소명 또는 도로명 주소 검색</label>
+                <label>장소 또는 주소 검색</label>
                 <div class="search-row">
-                    <input type="text" id="searchInput" placeholder="예: 중문보말칼국수 또는 서귀포시 중문로 90">
-                    <button type="button" onclick="searchGooglePlace()" class="sub-btn">위치찾기</button>
+                    <input type="text" id="searchInput" placeholder="예: 중문보말칼국수">
+                    <button type="button" onclick="searchGooglePlace()" class="sub-btn">검색</button>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>선택된 장소 이름</label>
-                <input type="text" id="placeName" placeholder="검색 후 자동으로 채워집니다" required>
+                <label>선택된 장소 명칭</label>
+                <input type="text" id="placeName" placeholder="위치찾기 후 자동 입력됩니다" required>
                 <input type="hidden" id="lat">
                 <input type="hidden" id="lng">
                 <input type="hidden" id="photoUrl">
@@ -180,16 +196,20 @@
 
             <div class="form-group">
                 <label>운영 정보</label>
-                <input type="text" id="hours" placeholder="운영 시간 (예: 10:00 ~ 20:00)">
-                <input type="text" id="breakTime" placeholder="브레이크 타임">
-                <input type="text" id="closedDay" placeholder="휴무 여부">
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <input type="text" id="hours" placeholder="운영시간 (예: 10:00~20:00)">
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="breakTime" placeholder="브레이크타임">
+                    <input type="text" id="closedDay" placeholder="휴무일">
+                </div>
             </div>
 
             <div class="form-group">
                 <label>키즈존 여부</label>
                 <div class="radio-group">
-                    <label><input type="radio" name="noKids" value="yes_kids" checked> 👶 Yes Kids (케어키즈)</label>
-                    <label><input type="radio" name="noKids" value="no_kids"> 🚫 No Kids (노키즈존)</label>
+                    <label><input type="radio" name="noKids" value="yes_kids" checked> 👶 케어키즈존</label>
+                    <label><input type="radio" name="noKids" value="no_kids"> 🚫 노키즈존</label>
                 </div>
             </div>
 
@@ -207,7 +227,7 @@
 
             <div class="form-group">
                 <label>메모</label>
-                <textarea id="memo" placeholder="가족들에게 남길 메모"></textarea>
+                <textarea id="memo" placeholder="가족들에게 남길 한마디"></textarea>
             </div>
 
             <button type="submit" class="primary-btn">저장하기</button>
@@ -252,7 +272,9 @@
             const jejuCenter = { lat: 33.3819, lng: 126.5592 };
             map = new google.maps.Map(document.getElementById('map'), {
                 center: jejuCenter,
-                zoom: 10
+                zoom: 10,
+                disableDefaultUI: true,
+                zoomControl: true
             });
             geocoder = new google.maps.Geocoder();
             placesService = new google.maps.places.PlacesService(map);
@@ -262,7 +284,7 @@
         function searchGooglePlace() {
             const query = document.getElementById('searchInput').value;
             if (!query.trim()) {
-                alert('장소명이나 도로명 주소를 입력해주세요!');
+                alert('장소명이나 주소를 입력해주세요!');
                 return;
             }
 
@@ -306,7 +328,7 @@
 
                             alert(`"${query}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
                         } else {
-                            alert('검색 결과가 없습니다. 명칭이나 정확한 도로명 주소를 입력해 보세요.');
+                            alert('검색 결과가 없습니다.');
                         }
                     });
                 }
@@ -336,7 +358,7 @@
                 mapContainer.style.display = 'block';
                 topAddBtn.style.display = 'block';
                 sortSelectContainer.style.display = 'flex';
-                document.getElementById('currentListTitle').innerHTML = `<span>${tab === 'List' ? '전체 장소 리스트' : tab + ' 일정 순서 정하기'}</span>`;
+                document.getElementById('currentListTitle').innerHTML = `<span>${tab === 'List' ? '전체 장소 리스트' : tab + ' 상세 일정'}</span>`;
             }
 
             renderPlaces();
@@ -349,8 +371,7 @@
         function openSidebarForAdd() {
             document.getElementById('placeForm').reset();
             delete document.getElementById('placeForm').dataset.editId;
-            document.getElementById('panelTitle').innerText = '장소 선택 및 등록';
-            // 기본값은 '미배정'
+            document.getElementById('panelTitle').innerText = '장소 등록';
             document.getElementById('selectedSchedule').value = (currentTab.startsWith('Day')) ? currentTab : '미배정';
             sidePanel.classList.add('active');
         }
@@ -405,7 +426,7 @@
             const distance = R * c;
             const minutes = Math.round((distance / 40) * 60);
             if (minutes < 5) return "약 5분 이내";
-            return `약 ${minutes}분 소요 (${distance.toFixed(1)}km)`;
+            return `약 ${minutes}분 (${distance.toFixed(1)}km)`;
         }
 
         function renderPlaces() {
@@ -416,7 +437,6 @@
             markers.forEach(m => m.setMap(null));
             markers = [];
 
-            // 1. Checklist 탭일 경우
             if (currentTab === 'Checklist') {
                 let html = `
                     <div class="checklist-view">
@@ -444,10 +464,8 @@
                 return;
             }
 
-            // 2. 장소 리스트 탭 필터링
             let filteredPlaces = (currentTab === 'List') ? [...places] : places.filter(p => p.schedule === currentTab);
 
-            // 3. 정렬 적용 (List 탭일 때만 상단 셀렉트 정렬 적용, Day 탭일 때는 사용자 지정 순서(order 값) 우선)
             if (currentTab === 'List') {
                 const sortType = document.getElementById('sortSelect').value;
                 filteredPlaces.sort((a, b) => {
@@ -463,12 +481,11 @@
                     }
                 });
             } else {
-                // Day 탭에서는 order 속성 기준 오름차순 정렬
                 filteredPlaces.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
 
             if (filteredPlaces.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:30px; color:#888; font-size:0.85rem; background:white; border-radius:8px;">등록된 장소가 없습니다.<br>우측 상단 '+ 장소추가' 버튼을 눌러 등록해보세요!</div>`;
+                container.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-sub); font-size:0.9rem; background:white; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,0.03);">등록된 장소가 없습니다.<br>우측 상단 **'+ 장소추가'** 버튼을 눌러보세요!</div>`;
                 return;
             }
 
@@ -477,50 +494,48 @@
                 const dayPlaces = places.filter(item => item.schedule === p.schedule);
                 const lodgingPlace = dayPlaces.find(item => item.category === 'lodging');
 
-                let travelInfo = "숙소를 먼저 등록해주세요!";
+                let travelInfo = "기준 숙소 없음";
                 if (lodgingPlace) {
                     if (p.id === lodgingPlace.id) {
-                        travelInfo = "기준 숙소입니다 🏠";
+                        travelInfo = "기준 숙소 🏠";
                     } else if (p.lat && p.lng && lodgingPlace.lat && lodgingPlace.lng) {
                         travelInfo = calculateTravelTime(lodgingPlace.lat, lodgingPlace.lng, p.lat, p.lng);
                     }
                 }
 
-                const kidsText = p.noKids === 'no_kids' ? '🚫 No Kids (노키즈)' : '👶 Yes Kids (케어키즈)';
+                const kidsText = p.noKids === 'no_kids' ? '🚫 노키즈존' : '👶 케어키즈';
                 const thumbHtml = p.photoUrl ? `<img src="${p.photoUrl}" class="place-thumb">` : `<div class="place-thumb">${emoji} 사진없음</div>`;
 
-                // Day 탭일 경우에만 순서 변경 버튼 노출
                 let orderControlHtml = '';
                 if (currentTab !== 'List') {
                     orderControlHtml = `
                         <div class="card-actions-left">
-                            <span style="font-weight:bold; color:#007aff;">#${index + 1}</span>
-                            <button class="order-btn" onclick="moveOrder(${p.id}, -1)" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲ 위로</button>
-                            <button class="order-btn" onclick="moveOrder(${p.id}, 1)" ${index === filteredPlaces.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼ 아래로</button>
+                            <span style="font-weight:700; color:var(--primary);">#${index + 1}</span>
+                            <button class="order-btn" onclick="moveOrder(${p.id}, -1)" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲</button>
+                            <button class="order-btn" onclick="moveOrder(${p.id}, 1)" ${index === filteredPlaces.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼</button>
                         </div>
                     `;
                 } else {
-                    orderControlHtml = `<div class="card-actions-left"><span style="font-size:0.75rem; font-weight:bold; color:${p.schedule === '미배정' ? '#999' : '#007aff'};">[일정: ${p.schedule}]</span></div>`;
+                    orderControlHtml = `<div class="card-actions-left"><span style="font-size:0.8rem; font-weight:600; color:${p.schedule === '미배정' ? '#b2bec3' : 'var(--primary)'};">[${p.schedule}]</span></div>`;
                 }
 
                 const card = document.createElement('div');
-                card.className = `card-item ${p.category}`;
+                card.className = `card-item`;
                 card.innerHTML = `
                     ${thumbHtml}
                     <div class="card-body">
                         <h3><span>${emoji} ${p.name}</span></h3>
-                        <div style="font-size:0.8rem; color:#555; line-height:1.5;">
-                            ⭐ ${p.rating}점 | Pick: <b>${p.picker}</b><br>
-                            🚗 숙소에서 이동: <b style="color:#007aff;">${travelInfo}</b><br>
+                        <div class="card-info-text">
+                            ⭐ <b>${p.rating}점</b> | Pick: <b>${p.picker}</b><br>
+                            🚗 이동: <b style="color:var(--primary);">${travelInfo}</b><br>
                             예약: ${p.reservation || '없음'} | ${kidsText}<br>
-                            메모: ${p.memo || '없음'}<br>
-                            ❤️ 투표 (${(p.voters || []).length}): <b style="color:#e91e63;">${(p.voters || []).join(', ') || '없음'}</b>
+                            ❤️ 투표 (${(p.voters || []).length}): <b style="color:#e84393;">${(p.voters || []).join(', ') || '없음'}</b>
                         </div>
                         <div class="card-actions">
                             ${orderControlHtml}
                             <div class="card-actions-right">
                                 <button onclick="editPlace(${p.id})">수정</button>
-                                <button onclick="deletePlace(${p.id})" style="color:#ff3b30;">삭제</button>
+                                <button onclick="deletePlace(${p.id})" style="color:#ff7675;">삭제</button>
                             </div>
                         </div>
                     </div>
@@ -538,7 +553,6 @@
             });
         }
 
-        // 순서 위/아래 이동 함수
         window.moveOrder = function(id, direction) {
             let dayPlaces = places.filter(p => p.schedule === currentTab);
             dayPlaces.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -549,26 +563,20 @@
             const targetIdx = idx + direction;
             if (targetIdx < 0 || targetIdx >= dayPlaces.length) return;
 
-            // 두 아이템의 순서 교환
             const temp = dayPlaces[idx].order || idx;
             dayPlaces[idx].order = dayPlaces[targetIdx].order || targetIdx;
             dayPlaces[targetIdx].order = temp;
 
-            // 만약 order 값이 둘 다 undefined였다면 인덱스로 강제 부여
             dayPlaces.forEach((p, i) => { p.order = i; });
 
             localStorage.setItem('jeju_places', JSON.stringify(places));
             renderPlaces();
         };
 
-        // 체크리스트 함수들
         function addChecklistItem() {
             const input = document.getElementById('newCheckItemText');
             const text = input.value.trim();
-            if (!text) {
-                alert('준비물 내용을 입력해주세요!');
-                return;
-            }
+            if (!text) return;
             checklist.push({ id: Date.now(), text: text, checked: false });
             localStorage.setItem('jeju_checklist', JSON.stringify(checklist));
             renderPlaces();
@@ -596,14 +604,13 @@
             const lng = document.getElementById('lng').value;
 
             if (!lat || !lng) {
-                alert('장소나 주소를 검색해서 위치를 먼저 지정해주세요!');
+                alert('장소를 검색해서 위치를 먼저 지정해주세요!');
                 return;
             }
 
             const resChecked = Array.from(document.querySelectorAll('input[name="res"]:checked')).map(el => el.value);
             const activeVoters = Array.from(document.querySelectorAll('#votersGroup .vote-tag.active')).map(el => el.dataset.name);
             const selectedSchedule = document.getElementById('selectedSchedule').value;
-
             const editId = document.getElementById('placeForm').dataset.editId;
             
             if (editId) {
@@ -629,7 +636,6 @@
                     };
                 }
             } else {
-                // 새로 등록할 때 해당 일정의 맨 마지막 순서로 배치
                 const sameDayPlaces = places.filter(p => p.schedule === selectedSchedule);
                 const newOrder = sameDayPlaces.length;
 
@@ -672,7 +678,7 @@
             const p = places.find(x => x.id === id);
             if (!p) return;
 
-            document.getElementById('panelTitle').innerText = '장소 수정하기';
+            document.getElementById('panelTitle').innerText = '장소 수정';
             document.getElementById('selectedSchedule').value = p.schedule || '미배정';
             setActiveButtonByValue('categoryGroup', 'selectedCategory', p.category);
             setActiveButtonByValue('pickerGroup', 'selectedPicker', p.picker);
