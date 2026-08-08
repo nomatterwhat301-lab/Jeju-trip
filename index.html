@@ -3,109 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>제주도 가족 여행 지도 🌴</title>
+    <title>우리 여행 제주도 여행🌴</title>
     <link rel="stylesheet" href="style.css">
-    <!-- 카카오 지도 API (라이브러리 포함: 장소 검색용 services 추가) -->
+    <!-- 카카오 지도 API (검색 라이브러리 포함) -->
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
 </head>
 <body>
-    <!-- 상단 헤더 & 햄버거 버튼 -->
+    <!-- 상단 타이틀 바 -->
     <header>
         <button id="menuBtn" class="menu-btn">☰</button>
-        <h1>제주도 가족 여행 지도 🌴</h1>
+        <h1>우리 여행 제주도 여행🌴</h1>
     </header>
 
-    <!-- 햄버거 사이드 메뉴 -->
-    <nav id="sideMenu" class="side-menu">
-        <div class="menu-header">
-            <h2>메뉴 & 필터</h2>
-            <button id="closeMenuBtn" class="close-btn">&times;</button>
+    <!-- 햄버거 사이드 메뉴 (장소 입력 패널) -->
+    <aside id="sidePanel" class="side-panel">
+        <div class="panel-header">
+            <h2>장소 등록 및 수정</h2>
+            <button id="closeBtn" class="close-btn">&times;</button>
         </div>
-        <div class="menu-content">
-            <h3>📅 일정별 모아보기</h3>
-            <select id="dayFilter" class="menu-select">
-                <option value="all">전체 일정 보기</option>
-                <option value="day1">1일차</option>
-                <option value="day2">2일차</option>
-                <option value="day3">3일차</option>
-            </select>
+        
+        <form id="placeForm" class="panel-form">
+            <!-- 일정 선택 (Day 1, 2, 3) -->
+            <div class="form-group">
+                <label>일정</label>
+                <div class="btn-select-group" id="scheduleGroup">
+                    <button type="button" class="sel-btn active" data-value="day1">Day 1</button>
+                    <button type="button" class="sel-btn" data-value="day2">Day 2</button>
+                    <button type="button" class="sel-btn" data-value="day3">Day 3</button>
+                </div>
+                <input type="hidden" id="selectedSchedule" value="day1">
+            </div>
 
-            <h3>📂 카테고리 필터</h3>
-            <select id="categoryFilter" class="menu-select">
-                <option value="all">모든 카테고리</option>
-                <option value="lodging">집(숙소)</option>
-                <option value="restaurant">숟가락/젓가락(음식점)</option>
-                <option value="cafe">커피잔(카페)</option>
-                <option value="tour">야자수(관광지)</option>
-            </select>
+            <!-- 카테고리 선택 (숙소, 음식점, 카페, 관광지) -->
+            <div class="form-group">
+                <label>카테고리</label>
+                <div class="btn-select-group" id="categoryGroup">
+                    <button type="button" class="sel-btn active" data-value="lodging">숙소🏠</button>
+                    <button type="button" class="sel-btn" data-value="restaurant">음식점🥢</button>
+                    <button type="button" class="sel-btn" data-value="cafe">카페☕</button>
+                    <button type="button" class="sel-btn" data-value="tour">관광지🌴</button>
+                </div>
+                <input type="hidden" id="selectedCategory" value="lodging">
+            </div>
 
-            <button id="addPlaceBtn" class="primary-btn" style="margin-top: 20px;">+ 새 장소 직접 추가하기</button>
-        </div>
-    </nav>
+            <!-- 픽한 사람 지정 (지현, 지숙, 연정, 미경, 유리, 주은) -->
+            <div class="form-group">
+                <label>참여 가족 (Pick)</label>
+                <div class="tag-select-group" id="pickerGroup">
+                    <button type="button" class="tag-btn" data-value="지현">지현</button>
+                    <button type="button" class="tag-btn" data-value="지숙">지숙</button>
+                    <button type="button" class="tag-btn" data-value="연정">연정</button>
+                    <button type="button" class="tag-btn" data-value="미경">미경</button>
+                    <button type="button" class="tag-btn" data-value="유리">유리</button>
+                    <button type="button" class="tag-btn" data-value="주은">주은</button>
+                </div>
+                <input type="hidden" id="selectedPicker" value="유리">
+            </div>
 
-    <!-- 메인 컨텐츠 영역 -->
+            <!-- 장소 검색 입력 -->
+            <div class="form-group">
+                <label>장소 검색</label>
+                <div class="search-row">
+                    <input type="text" id="searchInput" placeholder="예: 애월 카페, 흑돼지">
+                    <button type="button" onclick="searchPlaceKeyword()" class="sub-btn">검색</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>선택된 장소 이름 & 주소</label>
+                <input type="text" id="placeName" placeholder="검색 후 선택되거나 직접 입력" required>
+                <input type="hidden" id="lat">
+                <input type="hidden" id="lng">
+            </div>
+
+            <!-- 별점 -->
+            <div class="form-group">
+                <label>별점 (1 ~ 5)</label>
+                <div class="star-rating">
+                    <input type="number" id="rating" min="1" max="5" step="0.5" value="5"> ⭐
+                </div>
+            </div>
+
+            <!-- 예약 관련 체크박스 -->
+            <div class="form-group">
+                <label>예약 방법</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="res" value="네이버"> 네이버</label>
+                    <label><input type="checkbox" name="res" value="테이블링"> 테이블링</label>
+                    <label><input type="checkbox" name="res" value="캐치테이블"> 캐치테이블</label>
+                    <label><input type="checkbox" name="res" value="전화"> 전화</label>
+                </div>
+            </div>
+
+            <!-- 운영 시간 및 휴무 -->
+            <div class="form-group">
+                <label>운영 정보</label>
+                <input type="text" id="hours" placeholder="운영 시간 (예: 10:00 ~ 20:00)">
+                <input type="text" id="breakTime" placeholder="브레이크 타임 (예: 15:00 ~ 17:00)">
+                <input type="text" id="closedDay" placeholder="휴무 여부 (예: 매주 수요일 휴무)">
+            </div>
+
+            <!-- 노키즈존 여부 -->
+            <div class="form-group">
+                <label>노키즈존 여부</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="noKids" value="yes"> YES</label>
+                    <label><input type="radio" name="noKids" value="no" checked> NO</label>
+                </div>
+            </div>
+
+            <!-- 투표 기능 (가족 누구나 투표 가능) -->
+            <div class="form-group">
+                <label>가족 투표 참여</label>
+                <div class="tag-select-group" id="votersGroup">
+                    <button type="button" class="vote-tag" data-name="지현">지현</button>
+                    <button type="button" class="vote-tag" data-name="지숙">지숙</button>
+                    <button type="button" class="vote-tag" data-name="연정">연정</button>
+                    <button type="button" class="vote-tag" data-name="미경">미경</button>
+                    <button type="button" class="vote-tag" data-name="유리">유리</button>
+                    <button type="button" class="vote-tag" data-name="주은">주은</button>
+                </div>
+            </div>
+
+            <!-- 메모 공간 -->
+            <div class="form-group">
+                <label>메모</label>
+                <textarea id="memo" placeholder="가족들에게 남길 메모를 적어주세요"></textarea>
+            </div>
+
+            <button type="submit" class="primary-btn">저장하기</button>
+        </form>
+    </aside>
+
+    <!-- 메인 지도 화면 -->
     <main>
-        <!-- 지도가 화면 중심에 크게 위치 -->
         <div id="map"></div>
-
-        <!-- 장소 검색 영역 -->
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="장소를 검색해 보세요 (예: 애월 카페, 흑돼지)">
-            <button onclick="searchPlaces()" class="search-btn">검색</button>
+        <div id="placeListContainer" class="place-list-view">
+            <h2>우리 가족 픽한 장소들</h2>
+            <div id="cardsList"></div>
         </div>
-
-        <!-- 검색 결과 또는 선택된 장소 목록 -->
-        <section id="placeListContainer">
-            <h2>우리 가족 픽한 장소 목록</h2>
-            <div id="placeCards" class="card-grid"></div>
-        </section>
     </main>
-
-    <!-- 장소 상세 입력 및 수정 모달 창 -->
-    <div id="placeModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <h2 id="modalTitle">장소 상세 정보 입력</h2>
-            <form id="placeForm">
-                <input type="hidden" id="modalLat">
-                <input type="hidden" id="modalLng">
-                
-                <label>장소 이름: <input type="text" id="modalName" required readonly></label>
-                <label>카테고리: 
-                    <select id="modalCategory" required>
-                        <option value="lodging">집 (숙소)</option>
-                        <option value="restaurant">음식점</option>
-                        <option value="cafe">카페</option>
-                        <option value="tour">관광지</option>
-                    </select>
-                </label>
-                <label>일정 선택: 
-                    <select id="modalSchedule" required>
-                        <option value="day1">1일차</option>
-                        <option value="day2">2일차</option>
-                        <option value="day3">3일차</option>
-                    </select>
-                </label>
-                <label>픽한 사람: 
-                    <select id="modalPicker" required>
-                        <option value="지현">지현</option>
-                        <option value="지숙">지숙</option>
-                        <option value="연정">연정</option>
-                        <option value="미경">미경</option>
-                        <option value="유리">유리</option>
-                        <option value="주은">주은</option>
-                    </select>
-                </label>
-                <label>별점 (1~5): <input type="number" id="modalRating" min="1" max="5" step="0.5" value="5"></label>
-                <label>예약 여부: <input type="text" id="modalReservation" placeholder="예: 예약필수 / 현장결제"></label>
-                <label>영업시간 & 휴무: <input type="text" id="modalHours" placeholder="예: 10:00~20:00 (수요일 휴무)"></label>
-                <label class="checkbox-label"><input type="checkbox" id="modalNoKids"> 노키즈존 여부 (체크시 Yes)</label>
-                <label>메모: <textarea id="modalMemo" placeholder="가족들에게 전할 메모를 남겨주세요"></textarea></label>
-                
-                <button type="submit" class="primary-btn">저장하기</button>
-            </form>
-        </div>
-    </div>
 
     <script src="app.js"></script>
 </body>
