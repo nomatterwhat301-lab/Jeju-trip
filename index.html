@@ -3,19 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>우리 여행 제주도 여행🌴</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- 카카오 지도 API (autoload=false 옵션을 주어 확실하게 제어) -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services&autoload=false"></script>
+    <title>우리 가족 제주도 여행🌴</title>
+    <!-- 카카오 지도 API (autoload 설정 제거로 안정성 확보) -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #f0f2f5; color: #333; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+        /* 상단바 */
+        header { display: flex; align-items: center; background: #007aff; color: white; padding: 14px 16px; width: 100%; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 15px; }
+        header h1 { font-size: 1.1rem; }
+
+        /* 햄버거 사이드 패널 */
+        .side-panel { position: fixed; top: 0; left: -360px; width: 340px; height: 100%; background: white; z-index: 2000; transition: 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.2); overflow-y: auto; padding: 20px; }
+        .side-panel.active { left: 0; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #666; }
+
+        /* 폼 스타일 */
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #555; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; background: #fff; }
+        .form-group textarea { height: 60px; resize: none; }
+
+        .btn-select-group, .tag-select-group { display: flex; flex-wrap: wrap; gap: 6px; }
+        .sel-btn, .tag-btn, .vote-tag { padding: 6px 12px; border: 1px solid #ccc; background: #fff; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+        .sel-btn.active, .tag-btn.active, .vote-tag.active { background: #007aff; color: white; border-color: #007aff; font-weight: bold; }
+
+        .search-row { display: flex; gap: 6px; }
+        .sub-btn { background: #34c759; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+
+        .checkbox-group, .radio-group { display: flex; gap: 12px; font-size: 0.85rem; align-items: center; flex-wrap: wrap; }
+        .primary-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
+        /* 메인 화면 및 지도 */
+        main { width: 100%; max-width: 800px; margin: 0 auto; padding: 10px; flex: 1; display: flex; flex-direction: column; }
+        #map { width: 100%; height: 50vh; min-height: 350px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: #e5e3df; }
+
+        .place-list-view h2 { font-size: 1rem; margin-bottom: 10px; }
+        .card-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card-item h3 { font-size: 0.95rem; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .card-actions { display: flex; gap: 10px; margin-top: 8px; border-top: 1px solid #eee; padding-top: 6px; font-size: 0.8rem; }
+        .card-actions button { background: none; border: none; color: #007aff; cursor: pointer; }
+    </style>
 </head>
 <body>
     <!-- 상단 타이틀 바 -->
     <header>
         <button id="menuBtn" class="menu-btn">☰</button>
-        <h1>우리 여행 제주도 여행🌴</h1>
+        <h1>우리 가족 제주도 여행🌴</h1>
     </header>
 
-    <!-- 햄버거 메뉴를 누르면 열리는 장소 등록/수정 패널 -->
+    <!-- 햄버거 메뉴 패널 -->
     <aside id="sidePanel" class="side-panel">
         <div class="panel-header">
             <h2>장소 선택 및 등록</h2>
@@ -23,7 +63,7 @@
         </div>
         
         <form id="placeForm" class="panel-form">
-            <!-- 일정 선택 (Day 1, 2, 3) -->
+            <!-- 일정 선택 -->
             <div class="form-group">
                 <label>일정</label>
                 <div class="btn-select-group" id="scheduleGroup">
@@ -82,7 +122,7 @@
                 <input type="number" id="rating" min="1" max="5" step="0.5" value="5">
             </div>
 
-            <!-- 예약 관련 -->
+            <!-- 예약 방법 -->
             <div class="form-group">
                 <label>예약 방법</label>
                 <div class="checkbox-group">
@@ -98,7 +138,7 @@
                 <label>운영 정보</label>
                 <input type="text" id="hours" placeholder="운영 시간 (예: 10:00 ~ 20:00)">
                 <input type="text" id="breakTime" placeholder="브레이크 타임">
-                <input type="text" id="closedDay" placeholder="휴무 여부 (예: 수요일 휴무)">
+                <input type="text" id="closedDay" placeholder="휴무 여부">
             </div>
 
             <!-- 노키즈존 -->
@@ -110,7 +150,7 @@
                 </div>
             </div>
 
-            <!-- 투표 -->
+            <!-- 가족 투표 -->
             <div class="form-group">
                 <label>가족 투표</label>
                 <div class="tag-select-group" id="votersGroup">
@@ -133,7 +173,7 @@
         </form>
     </aside>
 
-    <!-- 메인 화면 (지도가 화면 전체를 꽉 채우도록 설정) -->
+    <!-- 메인 화면 -->
     <main>
         <div id="map"></div>
         <div id="placeListContainer" class="place-list-view">
@@ -142,6 +182,191 @@
         </div>
     </main>
 
-    <script src="app.js"></script>
+    <script>
+        let map;
+        let places = JSON.parse(localStorage.getItem('jeju_places')) || [];
+        let markers = [];
+
+        // 페이지 로드 시 지도 생성
+        window.onload = function() {
+            const container = document.getElementById('map');
+            const options = {
+                center: new kakao.maps.LatLng(33.3819, 126.5592), // 제주도 중심
+                level: 9
+            };
+            map = new kakao.maps.Map(container, options);
+            renderPlaces();
+        };
+
+        // 햄버거 메뉴 제어
+        const sidePanel = document.getElementById('sidePanel');
+        document.getElementById('menuBtn').onclick = () => sidePanel.classList.add('active');
+        document.getElementById('closeBtn').onclick = () => sidePanel.classList.remove('active');
+
+        // 버튼 그룹 선택 UI 로직
+        function setupButtonGroup(containerId, inputId, isMulti = false) {
+            const buttons = document.querySelectorAll(`#${containerId} button`);
+            buttons.forEach(btn => {
+                btn.onclick = () => {
+                    if (!isMulti) {
+                        buttons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        if (inputId) document.getElementById(inputId).value = btn.dataset.value || btn.dataset.name;
+                    } else {
+                        btn.classList.toggle('active');
+                    }
+                };
+            });
+        }
+        setupButtonGroup('scheduleGroup', 'selectedSchedule');
+        setupButtonGroup('categoryGroup', 'selectedCategory');
+        setupButtonGroup('pickerGroup', 'selectedPicker');
+        setupButtonGroup('votersGroup', null, true);
+
+        // 카카오 장소 검색
+        function searchPlaceKeyword() {
+            const keyword = document.getElementById('searchInput').value;
+            if (!keyword.trim()) {
+                alert('검색어를 입력해주세요!');
+                return;
+            }
+            const ps = new kakao.maps.services.Places();
+            ps.keywordSearch(keyword, (data, status) => {
+                if (status === kakao.maps.services.Status.OK) {
+                    const coords = new kakao.maps.LatLng(data[0].y, data[0].x);
+                    map.setCenter(coords);
+                    document.getElementById('placeName').value = data[0].place_name;
+                    document.getElementById('lat').value = data[0].y;
+                    document.getElementById('lng').value = data[0].x;
+                    alert(`"${data[0].place_name}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
+                } else {
+                    alert('검색 결과가 없습니다.');
+                }
+            });
+        }
+
+        // 이모지 반환
+        function getEmoji(cat) {
+            if (cat === 'lodging') return '🏠';
+            if (cat === 'restaurant') return '🥢';
+            if (cat === 'cafe') return '☕';
+            if (cat === 'tour') return '🌴';
+            return '📍';
+        }
+
+        // 장소 목록 및 마커 렌더링
+        function renderPlaces() {
+            const container = document.getElementById('cardsList');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            markers.forEach(m => m.setMap(null));
+            markers = [];
+
+            places.forEach(p => {
+                const emoji = getEmoji(p.category);
+
+                const card = document.createElement('div');
+                card.className = 'card-item';
+                card.innerHTML = `
+                    <h3><span>${emoji} ${p.name}</span> <span style="font-size:0.75rem; color:#888;">${p.schedule}</span></h3>
+                    <div style="font-size:0.8rem; color:#555; line-height:1.3;">
+                        ⭐ ${p.rating}점 | 픽: <b>${p.picker}</b><br>
+                        예약: ${p.reservation || '없음'} | 노키즈: ${p.noKids === 'yes' ? '🚫 YES' : '✔️ NO'}<br>
+                        메모: ${p.memo || '없음'}<br>
+                        ❤️ 투표: ${(p.voters || []).join(', ') || '없음'}
+                    </div>
+                    <div class="card-actions">
+                        <button onclick="editPlace(${p.id})">수정</button>
+                        <button onclick="deletePlace(${p.id})" style="color:#ff3b30;">삭제</button>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                if (p.lat && p.lng) {
+                    const marker = new kakao.maps.CustomOverlay({
+                        position: new kakao.maps.LatLng(p.lat, p.lng),
+                        content: `<div style="background:white; padding:4px 8px; border-radius:12px; border:2px solid #007aff; font-size:11px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2);">${emoji} ${p.name}</div>`,
+                        yAnchor: 1.5
+                    });
+                    marker.setMap(map);
+                    markers.push(marker);
+                }
+            });
+        }
+
+        // 폼 제출 (저장/수정)
+        document.getElementById('placeForm').onsubmit = (e) => {
+            e.preventDefault();
+            const name = document.getElementById('placeName').value;
+            const lat = document.getElementById('lat').value;
+            const lng = document.getElementById('lng').value;
+
+            if (!lat || !lng) {
+                alert('장소를 검색해서 위치를 먼저 지정해주세요!');
+                return;
+            }
+
+            const resChecked = Array.from(document.querySelectorAll('input[name="res"]:checked')).map(el => el.value);
+            const activeVoters = Array.from(document.querySelectorAll('#votersGroup .vote-tag.active')).map(el => el.dataset.name);
+
+            const editId = document.getElementById('placeForm').dataset.editId;
+            const placeData = {
+                id: editId ? Number(editId) : Date.now(),
+                schedule: document.getElementById('selectedSchedule').value,
+                category: document.getElementById('selectedCategory').value,
+                picker: document.getElementById('selectedPicker').value,
+                name: name,
+                lat: Number(lat),
+                lng: Number(lng),
+                rating: document.getElementById('rating').value,
+                reservation: resChecked.join(', '),
+                hours: document.getElementById('hours').value,
+                breakTime: document.getElementById('breakTime').value,
+                closedDay: document.getElementById('closedDay').value,
+                noKids: document.querySelector('input[name="noKids"]:checked').value,
+                memo: document.getElementById('memo').value,
+                voters: activeVoters
+            };
+
+            if (editId) {
+                const idx = places.findIndex(p => p.id == editId);
+                places[idx] = placeData;
+                delete document.getElementById('placeForm').dataset.editId;
+            } else {
+                places.push(placeData);
+            }
+
+            localStorage.setItem('jeju_places', JSON.stringify(places));
+            sidePanel.classList.remove('active');
+            document.getElementById('placeForm').reset();
+            renderPlaces();
+        };
+
+        window.deletePlace = (id) => {
+            if (confirm('정말 삭제하시겠습니까?')) {
+                places = places.filter(p => p.id !== id);
+                localStorage.setItem('jeju_places', JSON.stringify(places));
+                renderPlaces();
+            }
+        };
+
+        window.editPlace = (id) => {
+            const p = places.find(x => x.id === id);
+            if (!p) return;
+
+            document.getElementById('placeName').value = p.name;
+            document.getElementById('lat').value = p.lat;
+            document.getElementById('lng').value = p.lng;
+            document.getElementById('rating').value = p.rating;
+            document.getElementById('hours').value = p.hours;
+            document.getElementById('breakTime').value = p.breakTime;
+            document.getElementById('closedDay').value = p.closedDay;
+            document.getElementById('memo').value = p.memo;
+
+            document.getElementById('placeForm').dataset.editId = id;
+            sidePanel.classList.add('active');
+        };
+    </script>
 </body>
 </html>
