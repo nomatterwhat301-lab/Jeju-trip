@@ -43,9 +43,12 @@
         /* 폼 스타일 */
         .form-group { margin-bottom: 18px; }
         .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-main); }
-        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.9rem; background: #FAFAFA; transition: 0.2s; outline: none; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="time"], .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.9rem; background: #FAFAFA; transition: 0.2s; outline: none; }
         .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 3px rgba(255, 94, 91, 0.1); }
         .form-group textarea { height: 70px; resize: none; }
+
+        .time-picker-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .time-picker-row span { font-size: 0.85rem; font-weight: 600; color: var(--text-sub); }
 
         .btn-select-group, .tag-select-group { display: flex; flex-wrap: wrap; gap: 8px; }
         .sel-btn, .tag-btn, .vote-tag { padding: 8px 14px; border: 1px solid var(--border-color); background: #ffffff; border-radius: 10px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--text-sub); transition: 0.2s; }
@@ -69,7 +72,7 @@
         .list-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; }
         .sort-select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 10px; background: white; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; color: var(--text-main); }
 
-        /* 카드 디자인 고도화 */
+        /* 카드 디자인 및 간편 투표 영역 */
         .card-item { background: white; padding: 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; gap: 14px; align-items: flex-start; border: 1px solid rgba(0,0,0,0.04); transition: 0.2s; }
         .card-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
 
@@ -79,6 +82,13 @@
         
         .card-info-text { font-size: 0.85rem; color: var(--text-sub); line-height: 1.6; }
         .card-info-text b { color: var(--text-main); font-weight: 600; }
+
+        /* 카드 밖 즉시 투표 버튼 그룹 */
+        .card-quick-vote { margin-top: 10px; padding-top: 10px; border-top: 1px stroke #F1F2F6; }
+        .quick-vote-title { font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; }
+        .quick-voters-list { display: flex; flex-wrap: wrap; gap: 6px; }
+        .quick-vote-chip { padding: 4px 10px; border: 1px solid var(--border-color); background: #F8F9FA; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: var(--text-sub); cursor: pointer; transition: 0.2s; }
+        .quick-vote-chip.voted { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
 
         .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top: 1px solid #F1F2F6; padding-top: 10px; font-size: 0.8rem; }
         .card-actions-left { display: flex; gap: 8px; align-items: center; }
@@ -194,15 +204,33 @@
                 </div>
             </div>
 
+            <!-- 운영 정보 (시간 선택 피커 방식) -->
             <div class="form-group">
-                <label>운영 정보</label>
-                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                    <input type="text" id="hours" placeholder="운영시간 (예: 10:00~20:00)">
+                <label>운영 시간 (영업 시작 ~ 종료)</label>
+                <div class="time-picker-row">
+                    <input type="time" id="openTime">
+                    <span>~</span>
+                    <input type="time" id="closeTime">
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="breakTime" placeholder="브레이크타임">
-                    <input type="text" id="closedDay" placeholder="휴무일">
+                
+                <label style="margin-top: 10px;">브레이크 타임</label>
+                <div class="time-picker-row">
+                    <input type="time" id="breakStart">
+                    <span>~</span>
+                    <input type="time" id="breakEnd">
                 </div>
+
+                <label style="margin-top: 10px;">휴무일</label>
+                <select id="closedDaySelect">
+                    <option value="연중무휴">연중무휴 (휴무 없음)</option>
+                    <option value="월요일 휴무">월요일 휴무</option>
+                    <option value="화요일 휴무">화요일 휴무</option>
+                    <option value="수요일 휴무">수요일 휴무</option>
+                    <option value="목요일 휴무">목요일 휴무</option>
+                    <option value="금요일 휴무">금요일 휴무</option>
+                    <option value="토요일 휴무">토요일 휴무</option>
+                    <option value="일요일 휴무">일요일 휴무</option>
+                </select>
             </div>
 
             <div class="form-group">
@@ -210,18 +238,6 @@
                 <div class="radio-group">
                     <label><input type="radio" name="noKids" value="yes_kids" checked> 👶 케어키즈존</label>
                     <label><input type="radio" name="noKids" value="no_kids"> 🚫 노키즈존</label>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>가족 투표</label>
-                <div class="tag-select-group" id="votersGroup">
-                    <button type="button" class="vote-tag" data-name="지현">지현</button>
-                    <button type="button" class="vote-tag" data-name="지숙">지숙</button>
-                    <button type="button" class="vote-tag" data-name="연정">연정</button>
-                    <button type="button" class="vote-tag" data-name="미경">미경</button>
-                    <button type="button" class="vote-tag" data-name="유리">유리</button>
-                    <button type="button" class="vote-tag" data-name="주은">주은</button>
                 </div>
             </div>
 
@@ -267,6 +283,7 @@
         let currentTab = 'List';
         let geocoder;
         let placesService;
+        const FAMILY_MEMBERS = ['지현', '지숙', '연정', '미경', '유리', '주은'];
 
         window.onload = function() {
             const jejuCenter = { lat: 33.3819, lng: 126.5592 };
@@ -389,23 +406,18 @@
             });
         }
 
-        function setupButtonGroup(containerId, inputId, isMulti = false) {
+        function setupButtonGroup(containerId, inputId) {
             const buttons = document.querySelectorAll(`#${containerId} button`);
             buttons.forEach(btn => {
                 btn.onclick = () => {
-                    if (!isMulti) {
-                        buttons.forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        if (inputId) document.getElementById(inputId).value = btn.dataset.value || btn.dataset.name;
-                    } else {
-                        btn.classList.toggle('active');
-                    }
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (inputId) document.getElementById(inputId).value = btn.dataset.value || btn.dataset.name;
                 };
             });
         }
         setupButtonGroup('categoryGroup', 'selectedCategory');
         setupButtonGroup('pickerGroup', 'selectedPicker');
-        setupButtonGroup('votersGroup', null, true);
 
         function getEmoji(cat) {
             if (cat === 'lodging') return '🏠';
@@ -428,6 +440,23 @@
             if (minutes < 5) return "약 5분 이내";
             return `약 ${minutes}분 (${distance.toFixed(1)}km)`;
         }
+
+        // 카드 밖 간편 즉시 투표 함수
+        window.toggleQuickVote = function(placeId, name) {
+            const place = places.find(p => p.id === placeId);
+            if (!place) return;
+            if (!place.voters) place.voters = [];
+
+            const index = place.voters.indexOf(name);
+            if (index > -1) {
+                place.voters.splice(index, 1);
+            } else {
+                place.voters.push(name);
+            }
+
+            localStorage.setItem('jeju_places', JSON.stringify(places));
+            renderPlaces();
+        };
 
         function renderPlaces() {
             const container = document.getElementById('cardsList');
@@ -506,6 +535,33 @@
                 const kidsText = p.noKids === 'no_kids' ? '🚫 노키즈존' : '👶 케어키즈';
                 const thumbHtml = p.photoUrl ? `<img src="${p.photoUrl}" class="place-thumb">` : `<div class="place-thumb">${emoji} 사진없음</div>`;
 
+                // 운영시간 텍스트 포맷
+                let hoursFormatted = "시간 미입력";
+                if (p.openTime && p.closeTime) {
+                    hoursFormatted = `${p.openTime} ~ ${p.closeTime}`;
+                } else if (p.hours) {
+                    hoursFormatted = p.hours;
+                }
+
+                let breakFormatted = "";
+                if (p.breakStart && p.breakEnd) {
+                    breakFormatted = ` | 브레이크 ${p.breakStart}~${p.breakEnd}`;
+                } else if (p.breakTime) {
+                    breakFormatted = ` | 브레이크 ${p.breakTime}`;
+                }
+
+                const closedDayText = p.closedDaySelect || p.closedDay || '연중무휴';
+
+                // 카드 밖 간편 투표 칩 생성
+                const quickVoteChipsHtml = FAMILY_MEMBERS.map(member => {
+                    const isVoted = (p.voters || []).includes(member);
+                    return `
+                        <button class="quick-vote-chip ${isVoted ? 'voted' : ''}" onclick="toggleQuickVote(${p.id}, '${member}')">
+                            ${isVoted ? '❤️' : '🤍'} ${member}
+                        </button>
+                    `;
+                }).join('');
+
                 let orderControlHtml = '';
                 if (currentTab !== 'List') {
                     orderControlHtml = `
@@ -528,10 +584,18 @@
                         <div class="card-info-text">
                             ⭐ <b>${p.rating}점</b> | Pick: <b>${p.picker}</b><br>
                             🚗 이동: <b style="color:var(--primary);">${travelInfo}</b><br>
-                            ⏰ 운영: <b>${p.hours || '정보 없음'}</b> ${p.breakTime ? `| 브레이크: ${p.breakTime}` : ''} ${p.closedDay ? `| 휴무: ${p.closedDay}` : ''}<br>
-                            예약: ${p.reservation || '없음'} | ${kidsText}<br>
-                            ❤️ 투표 (${(p.voters || []).length}): <b style="color:#e84393;">${(p.voters || []).join(', ') || '없음'}</b>
+                            ⏰ 운영: <b>${hoursFormatted}</b>${breakFormatted} | <b>${closedDayText}</b><br>
+                            예약: ${p.reservation || '없음'} | ${kidsText}
                         </div>
+
+                        <!-- 카드 상에서 수정 없이 누르는 간편 투표 영역 -->
+                        <div class="card-quick-vote">
+                            <div class="quick-vote-title">가족 투표 (${(p.voters || []).length}명 선택):</div>
+                            <div class="quick-voters-list">
+                                ${quickVoteChipsHtml}
+                            </div>
+                        </div>
+
                         <div class="card-actions">
                             ${orderControlHtml}
                             <div class="card-actions-right">
@@ -610,7 +674,6 @@
             }
 
             const resChecked = Array.from(document.querySelectorAll('input[name="res"]:checked')).map(el => el.value);
-            const activeVoters = Array.from(document.querySelectorAll('#votersGroup .vote-tag.active')).map(el => el.dataset.name);
             const selectedSchedule = document.getElementById('selectedSchedule').value;
             const editId = document.getElementById('placeForm').dataset.editId;
             
@@ -628,12 +691,13 @@
                         photoUrl: document.getElementById('photoUrl').value,
                         rating: document.getElementById('rating').value,
                         reservation: resChecked.join(', '),
-                        hours: document.getElementById('hours').value,
-                        breakTime: document.getElementById('breakTime').value,
-                        closedDay: document.getElementById('closedDay').value,
+                        openTime: document.getElementById('openTime').value,
+                        closeTime: document.getElementById('closeTime').value,
+                        breakStart: document.getElementById('breakStart').value,
+                        breakEnd: document.getElementById('breakEnd').value,
+                        closedDaySelect: document.getElementById('closedDaySelect').value,
                         noKids: document.querySelector('input[name="noKids"]:checked').value,
-                        memo: document.getElementById('memo').value,
-                        voters: activeVoters
+                        memo: document.getElementById('memo').value
                     };
                 }
             } else {
@@ -651,12 +715,14 @@
                     photoUrl: document.getElementById('photoUrl').value,
                     rating: document.getElementById('rating').value,
                     reservation: resChecked.join(', '),
-                    hours: document.getElementById('hours').value,
-                    breakTime: document.getElementById('breakTime').value,
-                    closedDay: document.getElementById('closedDay').value,
+                    openTime: document.getElementById('openTime').value,
+                    closeTime: document.getElementById('closeTime').value,
+                    breakStart: document.getElementById('breakStart').value,
+                    breakEnd: document.getElementById('breakEnd').value,
+                    closedDaySelect: document.getElementById('closedDaySelect').value,
                     noKids: document.querySelector('input[name="noKids"]:checked').value,
                     memo: document.getElementById('memo').value,
-                    voters: activeVoters,
+                    voters: [],
                     order: newOrder
                 };
                 places.push(placeData);
@@ -690,9 +756,12 @@
             document.getElementById('photoUrl').value = p.photoUrl || '';
             document.getElementById('searchInput').value = p.name;
             document.getElementById('rating').value = p.rating;
-            document.getElementById('hours').value = p.hours;
-            document.getElementById('breakTime').value = p.breakTime;
-            document.getElementById('closedDay').value = p.closedDay;
+            
+            document.getElementById('openTime').value = p.openTime || '';
+            document.getElementById('closeTime').value = p.closeTime || '';
+            document.getElementById('breakStart').value = p.breakStart || '';
+            document.getElementById('breakEnd').value = p.breakEnd || '';
+            document.getElementById('closedDaySelect').value = p.closedDaySelect || '연중무휴';
             document.getElementById('memo').value = p.memo;
 
             const noKidsRadio = document.querySelector(`input[name="noKids"][value="${p.noKids || 'yes_kids'}"]`);
