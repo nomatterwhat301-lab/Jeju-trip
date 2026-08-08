@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 가족 제주도 여행🌴</title>
-    <!-- 구글 지도 API 로드 (발급받으신 API 키 적용 완료) -->
+    <!-- 구글 지도 API 로드 (본인의 API 키가 들어가 있는 상태 유지) -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAndcXXxmTbZO-HkdFfOuQyl5MniHISmKs&libraries=places&language=ko"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -66,11 +66,11 @@
     </header>
 
     <!-- 메인 일정 전환 탭 -->
-    <main-tab-bar class="main-tab-bar">
+    <div class="main-tab-bar">
         <button class="tab-btn active" onclick="changeMainTab('Day 1')">Day 1</button>
         <button class="tab-btn" onclick="changeMainTab('Day 2')">Day 2</button>
         <button class="tab-btn" onclick="changeMainTab('Day 3')">Day 3</button>
-    </main-tab-bar>
+    </div>
 
     <!-- 햄버거 메뉴 패널 (장소 등록/수정) -->
     <aside id="sidePanel" class="side-panel">
@@ -117,11 +117,11 @@
                 <input type="hidden" id="selectedPicker" value="유리">
             </div>
 
-            <!-- 장소 검색 -->
+            <!-- 장소 및 도로명 주소 검색 -->
             <div class="form-group">
-                <label>구글 장소 검색</label>
+                <label>장소명 또는 도로명 주소 검색</label>
                 <div class="search-row">
-                    <input type="text" id="searchInput" placeholder="예: 오설록 티뮤지엄 또는 제주공항">
+                    <input type="text" id="searchInput" placeholder="예: 중문보말칼국수 또는 서귀포시 중문로 90">
                     <button type="button" onclick="searchGooglePlace()" class="sub-btn">위치찾기</button>
                 </div>
             </div>
@@ -158,12 +158,12 @@
                 <input type="text" id="closedDay" placeholder="휴무 여부">
             </div>
 
-            <!-- 노키즈존 -->
+            <!-- 케어키즈존 / 노키즈존 선택 -->
             <div class="form-group">
-                <label>노키즈존 여부</label>
+                <label>키즈존 여부</label>
                 <div class="radio-group">
-                    <label><input type="radio" name="noKids" value="yes"> YES</label>
-                    <label><input type="radio" name="noKids" value="no" checked> NO</label>
+                    <label><input type="radio" name="noKids" value="yes_kids" checked> 👶 Yes Kids (케어키즈)</label>
+                    <label><input type="radio" name="noKids" value="no_kids"> 🚫 No Kids (노키즈존)</label>
                 </div>
             </div>
 
@@ -207,7 +207,6 @@
         let geocoder;
         let placesService;
 
-        // 구글 지도 초기화
         window.onload = function() {
             const jejuCenter = { lat: 33.3819, lng: 126.5592 };
             map = new google.maps.Map(document.getElementById('map'), {
@@ -219,11 +218,11 @@
             renderPlaces();
         };
 
-        // 구글 장소 및 주소 검색 기능
+        // 장소명 및 도로명 주소 검색 통합 처리
         function searchGooglePlace() {
             const query = document.getElementById('searchInput').value;
             if (!query.trim()) {
-                alert('장소명이나 주소를 입력해주세요!');
+                alert('장소명이나 도로명 주소를 입력해주세요!');
                 return;
             }
 
@@ -247,7 +246,7 @@
 
                     alert(`"${place.name}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
                 } else {
-                    // 장소 검색 실패 시 일반 지오코딩 주소 검색 시도
+                    // 장소 검색 결과가 없으면 도로명 주소(Geocoding)로 재검색
                     geocoder.geocode({ address: query }, function(results, status) {
                         if (status === 'OK' && results[0]) {
                             const lat = results[0].geometry.location.lat();
@@ -256,20 +255,20 @@
                             map.setCenter({ lat, lng });
                             map.setZoom(15);
 
+                            // 주소로 검색한 경우 포맷된 주소나 입력값을 장소 이름으로 활용
                             document.getElementById('placeName').value = query;
                             document.getElementById('lat').value = lat;
                             document.getElementById('lng').value = lng;
 
                             alert(`"${query}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
                         } else {
-                            alert('검색 결과가 없습니다. 명칭을 정확히 입력해 보세요.');
+                            alert('검색 결과가 없습니다. 명칭이나 정확한 도로명 주소를 입력해 보세요.');
                         }
                     });
                 }
             });
         }
 
-        // 상단 Day 탭 전환
         function changeMainTab(day) {
             currentTab = day;
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -280,7 +279,6 @@
             renderPlaces();
         }
 
-        // 햄버거 메뉴 제어
         const sidePanel = document.getElementById('sidePanel');
         document.getElementById('menuBtn').onclick = () => sidePanel.classList.add('active');
         document.getElementById('closeBtn').onclick = () => sidePanel.classList.remove('active');
@@ -333,7 +331,25 @@
             return '📍';
         }
 
-        // 마커 및 목록 렌더링
+        // 두 좌표 간의 거리 계산 (단위: km) 후 대략적인 소요 시간 산출 (시속 40km 기준)
+        function calculateTravelTime(lat1, lon1, lat2, lon2) {
+            const R = 6371; // 지구 반지름(km)
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c; // km 거리
+            
+            // 제주도 평균 주행 속도(시속 약 40km) 감안하여 시간 계산
+            const hours = distance / 40;
+            const minutes = Math.round(hours * 60);
+            
+            if (minutes < 5) return "약 5분 이내";
+            return `약 ${minutes}분 소요 (${distance.toFixed(1)}km)`;
+        }
+
         function renderPlaces() {
             const container = document.getElementById('cardsList');
             if (!container) return;
@@ -344,6 +360,9 @@
 
             const filteredPlaces = places.filter(p => p.schedule === currentTab);
 
+            // 해당 Day의 숙소 찾기 (기준점)
+            const lodgingPlace = filteredPlaces.find(p => p.category === 'lodging');
+
             if (filteredPlaces.length === 0) {
                 container.innerHTML = `<div style="text-align:center; padding:30px; color:#888; font-size:0.85rem; background:white; border-radius:8px;">${currentTab}에 등록된 장소가 없습니다.<br>우측 상단 '+ 장소추가' 버튼을 눌러 등록해보세요!</div>`;
                 return;
@@ -351,14 +370,28 @@
 
             filteredPlaces.forEach(p => {
                 const emoji = getEmoji(p.category);
+                
+                // 숙소로부터의 소요 시간 계산 텍스트 생성
+                let travelInfo = "숙소를 먼저 등록해주세요!";
+                if (lodgingPlace) {
+                    if (p.id === lodgingPlace.id) {
+                        travelInfo = "기준 숙소입니다 🏠";
+                    } else if (p.lat && p.lng && lodgingPlace.lat && lodgingPlace.lng) {
+                        travelInfo = calculateTravelTime(lodgingPlace.lat, lodgingPlace.lng, p.lat, p.lng);
+                    }
+                }
+
+                // 키즈존 텍스트 정리
+                const kidsText = p.noKids === 'no_kids' ? '🚫 No Kids (노키즈)' : '👶 Yes Kids (케어키즈)';
 
                 const card = document.createElement('div');
                 card.className = 'card-item';
                 card.innerHTML = `
                     <h3><span>${emoji} ${p.name}</span> <span style="font-size:0.75rem; color:#007aff; font-weight:bold;">${p.schedule}</span></h3>
-                    <div style="font-size:0.8rem; color:#555; line-height:1.4;">
-                        ⭐ ${p.rating}점 | Pick한 사람: <b>${p.picker}</b><br>
-                        예약: ${p.reservation || '없음'} | 노키즈: ${p.noKids === 'yes' ? '🚫 YES' : '✔️ NO'}<br>
+                    <div style="font-size:0.8rem; color:#555; line-height:1.5;">
+                        ⭐ ${p.rating}점 | Pick: <b>${p.picker}</b><br>
+                        🚗 숙소에서 이동: <b style="color:#007aff;">${travelInfo}</b><br>
+                        예약: ${p.reservation || '없음'} | ${kidsText}<br>
                         메모: ${p.memo || '없음'}<br>
                         ❤️ 투표: ${(p.voters || []).join(', ') || '없음'}
                     </div>
@@ -379,7 +412,6 @@
             });
         }
 
-        // 저장 / 수정 처리
         document.getElementById('placeForm').onsubmit = (e) => {
             e.preventDefault();
             const name = document.getElementById('placeName').value;
@@ -387,7 +419,7 @@
             const lng = document.getElementById('lng').value;
 
             if (!lat || !lng) {
-                alert('장소를 검색해서 위치를 먼저 지정해주세요!');
+                alert('장소나 주소를 검색해서 위치를 먼저 지정해주세요!');
                 return;
             }
 
@@ -445,11 +477,16 @@
             document.getElementById('placeName').value = p.name;
             document.getElementById('lat').value = p.lat;
             document.getElementById('lng').value = p.lng;
+            document.getElementById('searchInput').value = p.name;
             document.getElementById('rating').value = p.rating;
             document.getElementById('hours').value = p.hours;
             document.getElementById('breakTime').value = p.breakTime;
             document.getElementById('closedDay').value = p.closedDay;
             document.getElementById('memo').value = p.memo;
+
+            // 노키즈/예스키즈 라디오 버튼 복원
+            const noKidsRadio = document.querySelector(`input[name="noKids"][value="${p.noKids || 'yes_kids'}"]`);
+            if (noKidsRadio) noKidsRadio.checked = true;
 
             document.getElementById('placeForm').dataset.editId = id;
             sidePanel.classList.add('active');
