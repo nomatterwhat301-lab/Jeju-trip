@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 가족 제주도 여행🌴</title>
-    <!-- 구글 지도 API 로드 -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap"></script>
+    <!-- 카카오 맵 API 로드 (주소 검색 libraries=services 포함) -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f0f2f5; color: #333; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
@@ -39,7 +39,7 @@
         .sel-btn.active, .tag-btn.active, .vote-tag.active { background: #007aff; color: white; border-color: #007aff; font-weight: bold; }
 
         .search-row { display: flex; gap: 6px; }
-        .sub-btn { background: #34c759; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .sub-btn { background: #34c759; color: white; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; flex-shrink: 0; }
 
         .checkbox-group, .radio-group { display: flex; gap: 12px; font-size: 0.85rem; align-items: center; flex-wrap: wrap; }
         .primary-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
@@ -204,20 +204,21 @@
         let places = JSON.parse(localStorage.getItem('jeju_places')) || [];
         let markers = [];
         let currentTab = 'Day 1';
+        let geocoder;
 
-        // 구글 지도 초기화
-        window.initMap = function() {
-            const jejuCenter = { lat: 33.3819, lng: 126.5592 };
-            map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 10,
-                center: jejuCenter,
-                streetViewControl: false,
-                mapTypeControl: false
-            });
+        // 카카오 지도 초기화
+        window.onload = function() {
+            const container = document.getElementById('map');
+            const options = {
+                center: new kakao.maps.LatLng(33.3819, 126.5592), // 제주도 중심 좌표
+                level: 9
+            };
+            map = new kakao.maps.Map(container, options);
+            geocoder = new kakao.maps.services.Geocoder();
             renderPlaces();
         };
 
-        // 도로명 주소 및 장소 검색 기능 (Nominatim API 활용)
+        // 카카오 주소 및 키워드 검색 기능
         function searchAddress() {
             const query = document.getElementById('searchInput').value;
             if (!query.trim()) {
@@ -225,33 +226,41 @@
                 return;
             }
 
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' 제주도')}`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const item = data[0];
-                        const lat = parseFloat(item.lat);
-                        const lng = parseFloat(item.lon);
-                        
-                        const coord = { lat: lat, lng: lng };
-                        map.setCenter(coord);
-                        map.setZoom(15);
+            // 먼저 키워드 검색 시도 (장소명 검색에 용이)
+            const ps = new kakao.maps.services.Places();
+            ps.keywordSearch(query, function(data, status) {
+                if (status === kakao.maps.services.Status.OK) {
+                    const place = data[0];
+                    const coords = new kakao.maps.LatLng(place.y, place.x);
 
-                        document.getElementById('placeName').value = item.display_name.split(',')[0]; // 간소화된 이름
-                        document.getElementById('lat').value = lat;
-                        document.getElementById('lng').value = lng;
+                    map.setCenter(coords);
+                    map.setLevel(3);
 
-                        alert(`"${item.display_name.split(',')[0]}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
-                    } else {
-                        alert('검색 결과가 없습니다. 도로명 주소를 정확히 입력해 보세요.');
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('주소 검색 중 오류가 발생했습니다.');
-                });
+                    document.getElementById('placeName').value = place.place_name;
+                    document.getElementById('lat').value = place.y;
+                    document.getElementById('lng').value = place.x;
+
+                    alert(`"${place.place_name}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
+                } else {
+                    // 키워드 검색 실패 시 주소 검색 시도 (도로명 주소 검색용)
+                    geocoder.addressSearch(query, function(result, status) {
+                        if (status === kakao.maps.services.Status.OK) {
+                            const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+
+                            map.setCenter(coords);
+                            map.setLevel(3);
+
+                            document.getElementById('placeName').value = query;
+                            document.getElementById('lat').value = result[0].y;
+                            document.getElementById('lng').value = result[0].x;
+
+                            alert(`"${query}" 주소 위치를 찾았습니다! 저장하기를 눌러주세요.`);
+                        } else {
+                            alert('검색 결과가 없습니다. 도로명 주소나 장소명을 정확히 입력해 보세요.');
+                        }
+                    });
+                }
+            });
         }
 
         // 상단 Day 탭 전환
@@ -355,10 +364,10 @@
                 container.appendChild(card);
 
                 if (p.lat && p.lng && map) {
-                    const marker = new google.maps.Marker({
-                        position: { lat: p.lat, lng: p.lng },
-                        map: map,
-                        title: p.name
+                    const markerPosition = new kakao.maps.LatLng(p.lat, p.lng);
+                    const marker = new kakao.maps.Marker({
+                        position: markerPosition,
+                        map: map
                     });
                     markers.push(marker);
                 }
