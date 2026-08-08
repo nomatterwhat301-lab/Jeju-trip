@@ -103,6 +103,12 @@
         .order-btn { background: #EDF2F7 !important; border: none !important; padding: 4px 9px; border-radius: 8px; color: var(--text-main) !important; font-size: 0.75rem; font-weight: 600; }
         .order-btn:hover:not(:disabled) { background: #E2E8F0 !important; }
 
+        /* 가족별 멤버 탭 스타일 (준비물 전용) */
+        .member-tab-bar { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .member-tab-bar::-webkit-scrollbar { display: none; }
+        .member-btn { padding: 8px 14px; border: 1px solid var(--border-color); border-radius: 12px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; color: var(--text-sub); transition: 0.2s; }
+        .member-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px rgba(255,107,107,0.25); }
+
         /* 체크리스트 스타일 */
         .checklist-view { background: white; padding: 20px; border-radius: 20px; box-shadow: var(--card-shadow); }
         .checklist-add-row { display: flex; gap: 8px; margin-bottom: 16px; }
@@ -306,15 +312,16 @@
         let map;
         let places = [];
         let checklist = [
-            { id: 1, text: '신분증 / 운전면허증 (탑승 수속 필수)', checked: false },
-            { id: 2, text: '보조배터리 및 충전기', checked: false },
-            { id: 3, text: '상비약 (소화제, 두통약, 멀미약)', checked: false },
-            { id: 4, text: '선글라스, 모자, 자외선 차단제', checked: false },
-            { id: 5, text: '편한 운동화 및 여분 옷', checked: false },
-            { id: 6, text: '렌트카 예약 확인 및 카시트 확인', checked: false }
+            { id: 1, text: '신분증 / 운전면허증 (탑승 수속 필수)', checked: false, owner: '지현' },
+            { id: 2, text: '보조배터리 및 충전기', checked: false, owner: '유리' },
+            { id: 3, text: '상비약 (소화제, 두통약, 멀미약)', checked: false, owner: '지숙' },
+            { id: 4, text: '선글라스, 모자, 자외선 차단제', checked: false, owner: '연정' },
+            { id: 5, text: '편한 운동화 및 여분 옷', checked: false, owner: '미경' },
+            { id: 6, text: '렌트카 예약 확인 및 카시트 확인', checked: false, owner: '주은' }
         ];
         let markers = [];
         let currentTab = 'List';
+        let currentMember = '지현'; // 준비물 탭에서 선택된 가족 멤버
         let geocoder;
         let placesService;
         const FAMILY_MEMBERS = ['지현', '지숙', '연정', '미경', '유리', '주은'];
@@ -430,7 +437,7 @@
                 mapContainer.style.display = 'none';
                 topAddBtn.style.display = 'none';
                 sortSelectContainer.style.display = 'none';
-                document.getElementById('currentListTitle').innerHTML = `<span>✈️ 제주 여행 필수 준비물</span>`;
+                document.getElementById('currentListTitle').innerHTML = `<span>✈️ 가족별 제주 여행 준비물</span>`;
             } else {
                 mapContainer.style.display = 'block';
                 topAddBtn.style.display = 'block';
@@ -445,13 +452,18 @@
             renderPlaces();
         }
 
+        function changeMemberTab(memberName) {
+            currentMember = memberName;
+            renderPlaces();
+        }
+
         const sidePanel = document.getElementById('sidePanel');
         document.getElementById('menuBtn').onclick = () => sidePanel.classList.add('active');
         document.getElementById('closeBtn').onclick = () => sidePanel.classList.remove('active');
 
         function openSidebarForAdd() {
             document.getElementById('placeForm').reset();
-            delete document.getElementById('placeForm').dataset.editId;
+            delete document.getElementById('placeForm').dataset.editFirestoreId;
             document.getElementById('panelTitle').innerText = '장소 등록';
             document.getElementById('selectedSchedule').value = (currentTab.startsWith('Day')) ? currentTab : '미배정';
             sidePanel.classList.add('active');
@@ -555,26 +567,42 @@
             markers = [];
 
             if (currentTab === 'Checklist') {
+                // 가족별 탭 HTML 생성
+                let memberTabsHtml = `<div class="member-tab-bar">`;
+                FAMILY_MEMBERS.forEach(member => {
+                    const activeClass = (currentMember === member) ? 'active' : '';
+                    memberTabsHtml += `<button class="member-btn ${activeClass}" onclick="changeMemberTab('${member}')">${member}</button>`;
+                });
+                memberTabsHtml += `</div>`;
+
                 let html = `
                     <div class="checklist-view">
+                        ${memberTabsHtml}
                         <div class="checklist-add-row">
-                            <input type="text" id="newCheckItemText" placeholder="추가할 준비물을 입력하세요">
+                            <input type="text" id="newCheckItemText" placeholder="${currentMember}의 준비물을 입력하세요">
                             <button onclick="addChecklistItem()">추가</button>
                         </div>
                         <div id="checkItemsContainer">
                 `;
                 
-                checklist.forEach((item) => {
-                    html += `
-                        <div class="check-item ${item.checked ? 'checked' : ''}">
-                            <div class="check-item-left">
-                                <input type="checkbox" ${item.checked ? 'checked' : ''} onclick="toggleCheckItem(${item.id})">
-                                <span>${item.text}</span>
+                // 현재 선택된 멤버의 준비물만 필터링
+                const myChecklist = checklist.filter(item => (item.owner || '지현') === currentMember);
+
+                if (myChecklist.length === 0) {
+                    html += `<div style="text-align:center; padding: 25px; color: var(--text-sub); font-size: 0.85rem;">${currentMember}의 준비물이 아직 없어요!</div>`;
+                } else {
+                    myChecklist.forEach((item) => {
+                        html += `
+                            <div class="check-item ${item.checked ? 'checked' : ''}">
+                                <div class="check-item-left">
+                                    <input type="checkbox" ${item.checked ? 'checked' : ''} onclick="toggleCheckItem(${item.id})">
+                                    <span>${item.text}</span>
+                                </div>
+                                <button class="delete-check-btn" onclick="deleteCheckItem(${item.id})">삭제</button>
                             </div>
-                            <button class="delete-check-btn" onclick="deleteCheckItem(${item.id})">삭제</button>
-                        </div>
-                    `;
-                });
+                        `;
+                    });
+                }
 
                 html += `</div></div>`;
                 container.innerHTML = html;
@@ -752,7 +780,8 @@
             const input = document.getElementById('newCheckItemText');
             const text = input.value.trim();
             if (!text) return;
-            checklist.push({ id: Date.now(), text: text, checked: false });
+            // 현재 선택된 가족(currentMember)의 준비물로 자동 저장
+            checklist.push({ id: Date.now(), text: text, checked: false, owner: currentMember });
             saveChecklistToCloud();
             input.value = '';
         }
