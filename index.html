@@ -17,7 +17,7 @@
         header h1 { font-size: 1.1rem; }
         .add-place-trigger { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
 
-        /* 메인 일정 탭 바 */
+        /* 메인 일정 전환 탭 */
         .main-tab-bar { display: flex; background: white; padding: 10px 16px; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-shrink: 0; overflow-x: auto; }
         .tab-btn { flex: 1; padding: 8px 10px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; color: #666; text-align: center; transition: 0.2s; white-space: nowrap; }
         .tab-btn.active { background: #007aff; color: white; border-color: #007aff; }
@@ -31,7 +31,7 @@
         /* 폼 스타일 */
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #555; }
-        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; background: #fff; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; background: #fff; }
         .form-group textarea { height: 60px; resize: none; }
 
         .btn-select-group, .tag-select-group { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -51,7 +51,11 @@
 
         .place-list-view h2 { font-size: 1rem; margin-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
         
-        /* 카드 디자인 (색상별 테두리) */
+        /* 정렬 버튼 영역 */
+        .list-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.85rem; }
+        .sort-select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 0.85rem; cursor: pointer; }
+
+        /* 카드 디자인 */
         .card-item { background: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; gap: 12px; align-items: flex-start; border-left: 6px solid #ccc; }
         .card-item.lodging { border-left-color: #2196f3; background-color: #f4f8fb; }
         .card-item.restaurant { border-left-color: #ff9800; background-color: #fcf8f4; }
@@ -61,8 +65,13 @@
         .place-thumb { width: 75px; height: 75px; border-radius: 8px; object-fit: cover; background: #e0e0e0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #666; text-align: center; }
         .card-body { flex: 1; }
         .card-item h3 { font-size: 0.95rem; margin-bottom: 6px; display: flex; justify-content: space-between; }
-        .card-actions { display: flex; gap: 12px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; font-size: 0.8rem; }
+        
+        /* 카드 내 유틸 버튼 및 액션 */
+        .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; font-size: 0.8rem; }
+        .card-actions-left { display: flex; gap: 8px; align-items: center; }
+        .card-actions-right { display: flex; gap: 10px; }
         .card-actions button { background: none; border: none; color: #007aff; cursor: pointer; font-weight: bold; }
+        .order-btn { background: #f0f2f5 !important; border: 1px solid #ccc !important; padding: 2px 6px; border-radius: 4px; color: #333 !important; font-size: 0.75rem; }
 
         /* 체크리스트 전용 스타일 */
         .checklist-view { background: white; padding: 16px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
@@ -105,13 +114,13 @@
         
         <form id="placeForm" class="panel-form">
             <div class="form-group">
-                <label>일정</label>
-                <div class="btn-select-group" id="scheduleGroup">
-                    <button type="button" class="sel-btn active" data-value="Day 1">Day 1</button>
-                    <button type="button" class="sel-btn" data-value="Day 2">Day 2</button>
-                    <button type="button" class="sel-btn" data-value="Day 3">Day 3</button>
-                </div>
-                <input type="hidden" id="selectedSchedule" value="Day 1">
+                <label>일정 배정</label>
+                <select id="selectedSchedule" class="sort-select" style="width:100%; padding:8px;">
+                    <option value="미배정">미배정 (List에만 보관)</option>
+                    <option value="Day 1">Day 1</option>
+                    <option value="Day 2">Day 2</option>
+                    <option value="Day 3">Day 3</option>
+                </select>
             </div>
 
             <div class="form-group">
@@ -211,7 +220,14 @@
             <div id="map"></div>
         </div>
         <div id="placeListContainer" class="place-list-view">
-            <h2 id="currentListTitle"><span>전체 장소 리스트</span></h2>
+            <div class="list-controls">
+                <h2 id="currentListTitle" style="margin:0;"><span>전체 장소 리스트</span></h2>
+                <select id="sortSelect" class="sort-select" onchange="renderPlaces()">
+                    <option value="votes">❤️ 투표 많은 순</option>
+                    <option value="latest">⏱️ 등록 순</option>
+                    <option value="rating">⭐ 별점 높은 순</option>
+                </select>
+            </div>
             <div id="cardsList"></div>
         </div>
     </main>
@@ -309,15 +325,18 @@
 
             const mapContainer = document.getElementById('mapContainer');
             const topAddBtn = document.getElementById('topAddBtn');
+            const sortSelectContainer = document.querySelector('.list-controls');
 
             if (tab === 'Checklist') {
                 mapContainer.style.display = 'none';
-                topAddBtn.style.display = 'none'; // 준비물 탭에서는 장소추가 버튼 숨김
+                topAddBtn.style.display = 'none';
+                sortSelectContainer.style.display = 'none';
                 document.getElementById('currentListTitle').innerHTML = `<span>✈️ 제주 여행 필수 준비물</span>`;
             } else {
                 mapContainer.style.display = 'block';
                 topAddBtn.style.display = 'block';
-                document.getElementById('currentListTitle').innerHTML = `<span>${tab === 'List' ? '전체 장소 리스트' : tab + ' 픽한 장소들'}</span>`;
+                sortSelectContainer.style.display = 'flex';
+                document.getElementById('currentListTitle').innerHTML = `<span>${tab === 'List' ? '전체 장소 리스트' : tab + ' 일정 순서 정하기'}</span>`;
             }
 
             renderPlaces();
@@ -331,9 +350,8 @@
             document.getElementById('placeForm').reset();
             delete document.getElementById('placeForm').dataset.editId;
             document.getElementById('panelTitle').innerText = '장소 선택 및 등록';
-            if (currentTab !== 'List' && currentTab !== 'Checklist') {
-                setActiveButtonByValue('scheduleGroup', 'selectedSchedule', currentTab);
-            }
+            // 기본값은 '미배정'
+            document.getElementById('selectedSchedule').value = (currentTab.startsWith('Day')) ? currentTab : '미배정';
             sidePanel.classList.add('active');
         }
 
@@ -364,7 +382,6 @@
                 };
             });
         }
-        setupButtonGroup('scheduleGroup', 'selectedSchedule');
         setupButtonGroup('categoryGroup', 'selectedCategory');
         setupButtonGroup('pickerGroup', 'selectedPicker');
         setupButtonGroup('votersGroup', null, true);
@@ -399,7 +416,7 @@
             markers.forEach(m => m.setMap(null));
             markers = [];
 
-            // 1. Checklist 탭일 경우 전용 UI 렌더링
+            // 1. Checklist 탭일 경우
             if (currentTab === 'Checklist') {
                 let html = `
                     <div class="checklist-view">
@@ -410,7 +427,7 @@
                         <div id="checkItemsContainer">
                 `;
                 
-                checklist.forEach((item, idx) => {
+                checklist.forEach((item) => {
                     html += `
                         <div class="check-item ${item.checked ? 'checked' : ''}">
                             <div class="check-item-left">
@@ -427,15 +444,35 @@
                 return;
             }
 
-            // 2. 장소 리스트 탭일 경우
-            const filteredPlaces = (currentTab === 'List') ? places : places.filter(p => p.schedule === currentTab);
+            // 2. 장소 리스트 탭 필터링
+            let filteredPlaces = (currentTab === 'List') ? [...places] : places.filter(p => p.schedule === currentTab);
+
+            // 3. 정렬 적용 (List 탭일 때만 상단 셀렉트 정렬 적용, Day 탭일 때는 사용자 지정 순서(order 값) 우선)
+            if (currentTab === 'List') {
+                const sortType = document.getElementById('sortSelect').value;
+                filteredPlaces.sort((a, b) => {
+                    if (sortType === 'votes') {
+                        const countA = (a.voters || []).length;
+                        const countB = (b.voters || []).length;
+                        if (countB !== countA) return countB - countA;
+                        return b.id - a.id;
+                    } else if (sortType === 'rating') {
+                        return Number(b.rating) - Number(a.rating);
+                    } else {
+                        return b.id - a.id;
+                    }
+                });
+            } else {
+                // Day 탭에서는 order 속성 기준 오름차순 정렬
+                filteredPlaces.sort((a, b) => (a.order || 0) - (b.order || 0));
+            }
 
             if (filteredPlaces.length === 0) {
                 container.innerHTML = `<div style="text-align:center; padding:30px; color:#888; font-size:0.85rem; background:white; border-radius:8px;">등록된 장소가 없습니다.<br>우측 상단 '+ 장소추가' 버튼을 눌러 등록해보세요!</div>`;
                 return;
             }
 
-            filteredPlaces.forEach(p => {
+            filteredPlaces.forEach((p, index) => {
                 const emoji = getEmoji(p.category);
                 const dayPlaces = places.filter(item => item.schedule === p.schedule);
                 const lodgingPlace = dayPlaces.find(item => item.category === 'lodging');
@@ -452,22 +489,39 @@
                 const kidsText = p.noKids === 'no_kids' ? '🚫 No Kids (노키즈)' : '👶 Yes Kids (케어키즈)';
                 const thumbHtml = p.photoUrl ? `<img src="${p.photoUrl}" class="place-thumb">` : `<div class="place-thumb">${emoji} 사진없음</div>`;
 
+                // Day 탭일 경우에만 순서 변경 버튼 노출
+                let orderControlHtml = '';
+                if (currentTab !== 'List') {
+                    orderControlHtml = `
+                        <div class="card-actions-left">
+                            <span style="font-weight:bold; color:#007aff;">#${index + 1}</span>
+                            <button class="order-btn" onclick="moveOrder(${p.id}, -1)" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲ 위로</button>
+                            <button class="order-btn" onclick="moveOrder(${p.id}, 1)" ${index === filteredPlaces.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼ 아래로</button>
+                        </div>
+                    `;
+                } else {
+                    orderControlHtml = `<div class="card-actions-left"><span style="font-size:0.75rem; font-weight:bold; color:${p.schedule === '미배정' ? '#999' : '#007aff'};">[일정: ${p.schedule}]</span></div>`;
+                }
+
                 const card = document.createElement('div');
                 card.className = `card-item ${p.category}`;
                 card.innerHTML = `
                     ${thumbHtml}
                     <div class="card-body">
-                        <h3><span>${emoji} ${p.name}</span> <span style="font-size:0.75rem; color:#007aff; font-weight:bold;">${p.schedule}</span></h3>
+                        <h3><span>${emoji} ${p.name}</span></h3>
                         <div style="font-size:0.8rem; color:#555; line-height:1.5;">
                             ⭐ ${p.rating}점 | Pick: <b>${p.picker}</b><br>
                             🚗 숙소에서 이동: <b style="color:#007aff;">${travelInfo}</b><br>
                             예약: ${p.reservation || '없음'} | ${kidsText}<br>
                             메모: ${p.memo || '없음'}<br>
-                            ❤️ 투표: ${(p.voters || []).join(', ') || '없음'}
+                            ❤️ 투표 (${(p.voters || []).length}): <b style="color:#e91e63;">${(p.voters || []).join(', ') || '없음'}</b>
                         </div>
                         <div class="card-actions">
-                            <button onclick="editPlace(${p.id})">수정</button>
-                            <button onclick="deletePlace(${p.id})" style="color:#ff3b30;">삭제</button>
+                            ${orderControlHtml}
+                            <div class="card-actions-right">
+                                <button onclick="editPlace(${p.id})">수정</button>
+                                <button onclick="deletePlace(${p.id})" style="color:#ff3b30;">삭제</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -476,14 +530,38 @@
                 if (p.lat && p.lng && map && currentTab !== 'List') {
                     const marker = new google.maps.Marker({
                         position: { lat: p.lat, lng: p.lng },
-                        map: map
+                        map: map,
+                        label: { text: String(index + 1), color: "white", fontWeight: "bold" }
                     });
                     markers.push(marker);
                 }
             });
         }
 
-        // 체크리스트 추가/수정/삭제 함수들
+        // 순서 위/아래 이동 함수
+        window.moveOrder = function(id, direction) {
+            let dayPlaces = places.filter(p => p.schedule === currentTab);
+            dayPlaces.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            const idx = dayPlaces.findIndex(p => p.id === id);
+            if (idx < 0) return;
+
+            const targetIdx = idx + direction;
+            if (targetIdx < 0 || targetIdx >= dayPlaces.length) return;
+
+            // 두 아이템의 순서 교환
+            const temp = dayPlaces[idx].order || idx;
+            dayPlaces[idx].order = dayPlaces[targetIdx].order || targetIdx;
+            dayPlaces[targetIdx].order = temp;
+
+            // 만약 order 값이 둘 다 undefined였다면 인덱스로 강제 부여
+            dayPlaces.forEach((p, i) => { p.order = i; });
+
+            localStorage.setItem('jeju_places', JSON.stringify(places));
+            renderPlaces();
+        };
+
+        // 체크리스트 함수들
         function addChecklistItem() {
             const input = document.getElementById('newCheckItemText');
             const text = input.value.trim();
@@ -524,31 +602,56 @@
 
             const resChecked = Array.from(document.querySelectorAll('input[name="res"]:checked')).map(el => el.value);
             const activeVoters = Array.from(document.querySelectorAll('#votersGroup .vote-tag.active')).map(el => el.dataset.name);
+            const selectedSchedule = document.getElementById('selectedSchedule').value;
 
             const editId = document.getElementById('placeForm').dataset.editId;
-            const placeData = {
-                id: editId ? Number(editId) : Date.now(),
-                schedule: document.getElementById('selectedSchedule').value,
-                category: document.getElementById('selectedCategory').value,
-                picker: document.getElementById('selectedPicker').value,
-                name: name,
-                lat: Number(lat),
-                lng: Number(lng),
-                photoUrl: document.getElementById('photoUrl').value,
-                rating: document.getElementById('rating').value,
-                reservation: resChecked.join(', '),
-                hours: document.getElementById('hours').value,
-                breakTime: document.getElementById('breakTime').value,
-                closedDay: document.getElementById('closedDay').value,
-                noKids: document.querySelector('input[name="noKids"]:checked').value,
-                memo: document.getElementById('memo').value,
-                voters: activeVoters
-            };
-
+            
             if (editId) {
                 const idx = places.findIndex(x => x.id == editId);
-                places[idx] = placeData;
+                if (idx > -1) {
+                    places[idx] = {
+                        ...places[idx],
+                        schedule: selectedSchedule,
+                        category: document.getElementById('selectedCategory').value,
+                        picker: document.getElementById('selectedPicker').value,
+                        name: name,
+                        lat: Number(lat),
+                        lng: Number(lng),
+                        photoUrl: document.getElementById('photoUrl').value,
+                        rating: document.getElementById('rating').value,
+                        reservation: resChecked.join(', '),
+                        hours: document.getElementById('hours').value,
+                        breakTime: document.getElementById('breakTime').value,
+                        closedDay: document.getElementById('closedDay').value,
+                        noKids: document.querySelector('input[name="noKids"]:checked').value,
+                        memo: document.getElementById('memo').value,
+                        voters: activeVoters
+                    };
+                }
             } else {
+                // 새로 등록할 때 해당 일정의 맨 마지막 순서로 배치
+                const sameDayPlaces = places.filter(p => p.schedule === selectedSchedule);
+                const newOrder = sameDayPlaces.length;
+
+                const placeData = {
+                    id: Date.now(),
+                    schedule: selectedSchedule,
+                    category: document.getElementById('selectedCategory').value,
+                    picker: document.getElementById('selectedPicker').value,
+                    name: name,
+                    lat: Number(lat),
+                    lng: Number(lng),
+                    photoUrl: document.getElementById('photoUrl').value,
+                    rating: document.getElementById('rating').value,
+                    reservation: resChecked.join(', '),
+                    hours: document.getElementById('hours').value,
+                    breakTime: document.getElementById('breakTime').value,
+                    closedDay: document.getElementById('closedDay').value,
+                    noKids: document.querySelector('input[name="noKids"]:checked').value,
+                    memo: document.getElementById('memo').value,
+                    voters: activeVoters,
+                    order: newOrder
+                };
                 places.push(placeData);
             }
 
@@ -570,7 +673,7 @@
             if (!p) return;
 
             document.getElementById('panelTitle').innerText = '장소 수정하기';
-            setActiveButtonByValue('scheduleGroup', 'selectedSchedule', p.schedule);
+            document.getElementById('selectedSchedule').value = p.schedule || '미배정';
             setActiveButtonByValue('categoryGroup', 'selectedCategory', p.category);
             setActiveButtonByValue('pickerGroup', 'selectedPicker', p.picker);
 
