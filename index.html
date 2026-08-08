@@ -278,6 +278,18 @@
     <script>
         let map;
         let places = JSON.parse(localStorage.getItem('jeju_places')) || [];
+        
+        // 기존 데이터에 order 값이 누락되어 있다면 순서대로 자동 부여
+        ['Day 1', 'Day 2', 'Day 3', '미배정'].forEach(sched => {
+            let schedPlaces = places.filter(p => (p.schedule || '미배정') === sched);
+            schedPlaces.forEach((p, idx) => {
+                if (p.order === undefined) {
+                    p.order = idx;
+                }
+            });
+        });
+        localStorage.setItem('jeju_places', JSON.stringify(places));
+
         let checklist = JSON.parse(localStorage.getItem('jeju_checklist')) || [
             { id: 1, text: '신분증 / 운전면허증 (탑승 수속 필수)', checked: false },
             { id: 2, text: '보조배터리 및 충전기', checked: false },
@@ -381,7 +393,6 @@
             } else {
                 mapContainer.style.display = 'block';
                 topAddBtn.style.display = 'block';
-                // Day별 탭에서는 순서 변경이 주가 되므로 정렬 셀렉트 숨김, List일 때만 표시
                 if (tab === 'List') {
                     sortSelectContainer.style.display = 'flex';
                 } else {
@@ -439,42 +450,18 @@
             return '📍';
         }
 
-        // 카테고리별 마커 색상 및 이모지 설정
         function getCategoryStyle(cat) {
             switch(cat) {
-                case 'lodging': return { color: '#FF5E5B', emoji: '🏠' }; // 숙소 (빨간색)
-                case 'restaurant': return { color: '#FF9F43', emoji: '🥢' }; // 음식점 (주황색)
-                case 'cafe': return { color: '#A0522D', emoji: '☕' }; // 카페 (갈색)
-                case 'tour': return { color: '#2ECC71', emoji: '🌴' }; // 관광지 (초록색)
+                case 'lodging': return { color: '#FF5E5B', emoji: '🏠' };
+                case 'restaurant': return { color: '#FF9F43', emoji: '🥢' };
+                case 'cafe': return { color: '#A0522D', emoji: '☕' };
+                case 'tour': return { color: '#2ECC71', emoji: '🌴' };
                 default: return { color: '#3498DB', emoji: '📍' };
             }
         }
 
-        // 커스텀 HTML 핀 생성 함수
         function createCustomPin(cat, textLabel) {
             const style = getCategoryStyle(cat);
-            const html = `
-                <div style="
-                    background-color: ${style.color};
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 50% 50% 50% 0;
-                    transform: rotate(-45deg);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-                    border: 2px solid white;
-                ">
-                    <div style="
-                        transform: rotate(45deg);
-                        font-size: 14px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    ">${currentTab === 'List' ? style.emoji : textLabel}</div>
-                </div>
-            `;
             return new google.maps.MarkerImage(
                 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                     <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
@@ -570,11 +557,9 @@
                     }
                 });
             } else {
-                // Day별 탭에서는 사용자가 지정한 order 순서대로 정렬 (없으면 등록순 인덱스)
                 filteredPlaces.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
             }
 
-            // 1. 현재 탭의 카드들을 화면에 렌더링하고, 해당 장소들의 마커를 지도에 표시합니다.
             filteredPlaces.forEach((p, index) => {
                 const emoji = getEmoji(p.category);
                 const dayPlaces = places.filter(item => item.schedule === p.schedule);
@@ -663,7 +648,6 @@
                 `;
                 container.appendChild(card);
 
-                // 카테고리별 맞춤 마커 표시
                 if (p.lat && p.lng && map) {
                     const markerIcon = createCustomPin(p.category, String(index + 1));
                     const marker = new google.maps.Marker({
@@ -675,7 +659,6 @@
                 }
             });
 
-            // 2. 현재 탭이 Day별 탭일 때, 해당 탭에 포함되지 않은 '숙소(lodging)'들도 항상 함께 표시
             if (currentTab !== 'List') {
                 const allLodgings = places.filter(p => p.category === 'lodging' && p.schedule !== currentTab && p.lat && p.lng);
                 allLodgings.forEach(l => {
@@ -684,7 +667,7 @@
                         position: { lat: l.lat, lng: l.lng },
                         map: map,
                         icon: markerIcon,
-                        zIndex: 999 // 숙소는 항상 맨 위 계층에 표시
+                        zIndex: 999
                     });
                     markers.push(marker);
                 });
@@ -705,13 +688,15 @@
             const targetIdx = idx + direction;
             if (targetIdx < 0 || targetIdx >= dayPlaces.length) return;
 
-            // 위치 서로 교환
-            const tempOrder = dayPlaces[idx].order ?? idx;
-            dayPlaces[idx].order = dayPlaces[targetIdx].order ?? targetIdx;
-            dayPlaces[targetIdx].order = tempOrder;
+            // 위치 변경
+            const temp = dayPlaces[idx];
+            dayPlaces[idx] = dayPlaces[targetIdx];
+            dayPlaces[targetIdx] = temp;
 
-            // 전체 순서 인덱스 재정리
-            dayPlaces.forEach((p, i) => { p.order = i; });
+            // 전체 순서 인덱스 새로고침
+            dayPlaces.forEach((p, i) => {
+                p.order = i;
+            });
 
             localStorage.setItem('jeju_places', JSON.stringify(places));
             renderPlaces();
