@@ -84,7 +84,7 @@
         .card-info-text b { color: var(--text-main); font-weight: 600; }
 
         /* 카드 밖 즉시 투표 버튼 그룹 */
-        .card-quick-vote { margin-top: 10px; padding-top: 10px; border-top: 1px stroke #F1F2F6; }
+        .card-quick-vote { margin-top: 10px; padding-top: 10px; border-top: 1px solid #F1F2F6; }
         .quick-vote-title { font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; }
         .quick-voters-list { display: flex; flex-wrap: wrap; gap: 6px; }
         .quick-vote-chip { padding: 4px 10px; border: 1px solid var(--border-color); background: #F8F9FA; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: var(--text-sub); cursor: pointer; transition: 0.2s; }
@@ -204,7 +204,7 @@
                 </div>
             </div>
 
-            <!-- 운영 정보 (시간 선택 피커 방식) -->
+            <!-- 운영 정보 및 주차 정보 -->
             <div class="form-group">
                 <label>운영 시간 (영업 시작 ~ 종료)</label>
                 <div class="time-picker-row">
@@ -230,6 +230,13 @@
                     <option value="금요일 휴무">금요일 휴무</option>
                     <option value="토요일 휴무">토요일 휴무</option>
                     <option value="일요일 휴무">일요일 휴무</option>
+                </select>
+
+                <label style="margin-top: 10px;">주차 여부</label>
+                <select id="parkingSelect">
+                    <option value="주차 가능 🚗">주차 가능 🚗</option>
+                    <option value="주차 불가 ❌">주차 불가 ❌</option>
+                    <option value="인근 공영주차장 이용 🅿️">인근 공영주차장 이용 🅿️</option>
                 </select>
             </div>
 
@@ -441,7 +448,6 @@
             return `약 ${minutes}분 (${distance.toFixed(1)}km)`;
         }
 
-        // 카드 밖 간편 즉시 투표 함수
         window.toggleQuickVote = function(placeId, name) {
             const place = places.find(p => p.id === placeId);
             if (!place) return;
@@ -513,11 +519,7 @@
                 filteredPlaces.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
 
-            if (filteredPlaces.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-sub); font-size:0.9rem; background:white; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,0.03);">등록된 장소가 없습니다.<br>우측 상단 **'+ 장소추가'** 버튼을 눌러보세요!</div>`;
-                return;
-            }
-
+            // 1. 먼저 현재 탭의 카드들을 화면에 렌더링하고, 해당 장소들의 마커를 지도에 찍습니다.
             filteredPlaces.forEach((p, index) => {
                 const emoji = getEmoji(p.category);
                 const dayPlaces = places.filter(item => item.schedule === p.schedule);
@@ -533,9 +535,9 @@
                 }
 
                 const kidsText = p.noKids === 'no_kids' ? '🚫 노키즈존' : '👶 케어키즈';
+                const parkingText = p.parkingSelect || '주차 정보 없음';
                 const thumbHtml = p.photoUrl ? `<img src="${p.photoUrl}" class="place-thumb">` : `<div class="place-thumb">${emoji} 사진없음</div>`;
 
-                // 운영시간 텍스트 포맷
                 let hoursFormatted = "시간 미입력";
                 if (p.openTime && p.closeTime) {
                     hoursFormatted = `${p.openTime} ~ ${p.closeTime}`;
@@ -552,7 +554,6 @@
 
                 const closedDayText = p.closedDaySelect || p.closedDay || '연중무휴';
 
-                // 카드 밖 간편 투표 칩 생성
                 const quickVoteChipsHtml = FAMILY_MEMBERS.map(member => {
                     const isVoted = (p.voters || []).includes(member);
                     return `
@@ -584,11 +585,11 @@
                         <div class="card-info-text">
                             ⭐ <b>${p.rating}점</b> | Pick: <b>${p.picker}</b><br>
                             🚗 이동: <b style="color:var(--primary);">${travelInfo}</b><br>
+                            🅿️ 주차: <b>${parkingText}</b><br>
                             ⏰ 운영: <b>${hoursFormatted}</b>${breakFormatted} | <b>${closedDayText}</b><br>
                             예약: ${p.reservation || '없음'} | ${kidsText}
                         </div>
 
-                        <!-- 카드 상에서 수정 없이 누르는 간편 투표 영역 -->
                         <div class="card-quick-vote">
                             <div class="quick-vote-title">가족 투표 (${(p.voters || []).length}명 선택):</div>
                             <div class="quick-voters-list">
@@ -607,15 +608,34 @@
                 `;
                 container.appendChild(card);
 
-                if (p.lat && p.lng && map && currentTab !== 'List') {
+                // 일반 장소 마커 표시
+                if (p.lat && p.lng && map) {
                     const marker = new google.maps.Marker({
                         position: { lat: p.lat, lng: p.lng },
                         map: map,
-                        label: { text: String(index + 1), color: "white", fontWeight: "bold" }
+                        label: { text: currentTab === 'List' ? '📍' : String(index + 1), color: "white", fontWeight: "bold" }
                     });
                     markers.push(marker);
                 }
             });
+
+            // 2. 만약 현재 탭이 Day별 탭이라면, 해당 탭에 포함되지 않은 '숙소(lodging)'들도 지도에 항상 함께 표시
+            if (currentTab !== 'List') {
+                const allLodgings = places.filter(p => p.category === 'lodging' && p.schedule !== currentTab && p.lat && p.lng);
+                allLodgings.forEach(l => {
+                    const marker = new google.maps.Marker({
+                        position: { lat: l.lat, lng: l.lng },
+                        map: map,
+                        label: { text: '🏠', color: "white", fontWeight: "bold" },
+                        zIndex: 999 // 숙소는 항상 위쪽에 보이도록 설정
+                    });
+                    markers.push(marker);
+                });
+            }
+
+            if (filteredPlaces.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-sub); font-size:0.9rem; background:white; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,0.03);">등록된 장소가 없습니다.<br>우측 상단 **'+ 장소추가'** 버튼을 눌러보세요!</div>`;
+            }
         }
 
         window.moveOrder = function(id, direction) {
@@ -696,6 +716,7 @@
                         breakStart: document.getElementById('breakStart').value,
                         breakEnd: document.getElementById('breakEnd').value,
                         closedDaySelect: document.getElementById('closedDaySelect').value,
+                        parkingSelect: document.getElementById('parkingSelect').value,
                         noKids: document.querySelector('input[name="noKids"]:checked').value,
                         memo: document.getElementById('memo').value
                     };
@@ -720,6 +741,7 @@
                     breakStart: document.getElementById('breakStart').value,
                     breakEnd: document.getElementById('breakEnd').value,
                     closedDaySelect: document.getElementById('closedDaySelect').value,
+                    parkingSelect: document.getElementById('parkingSelect').value,
                     noKids: document.querySelector('input[name="noKids"]:checked').value,
                     memo: document.getElementById('memo').value,
                     voters: [],
@@ -762,6 +784,7 @@
             document.getElementById('breakStart').value = p.breakStart || '';
             document.getElementById('breakEnd').value = p.breakEnd || '';
             document.getElementById('closedDaySelect').value = p.closedDaySelect || '연중무휴';
+            document.getElementById('parkingSelect').value = p.parkingSelect || '주차 가능 🚗';
             document.getElementById('memo').value = p.memo;
 
             const noKidsRadio = document.querySelector(`input[name="noKids"][value="${p.noKids || 'yes_kids'}"]`);
