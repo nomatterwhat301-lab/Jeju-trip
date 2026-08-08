@@ -31,11 +31,17 @@
         .add-place-trigger { background: var(--primary); border: none; color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35); transition: 0.2s; }
         .add-place-trigger:active { transform: scale(0.95); }
 
-        /* 메인 일정 전환 탭 (토스/애플 스타일 모던 캡슐) */
-        .main-tab-bar { display: flex; background: #ffffff; padding: 12px 16px; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+        /* 메인 일정 전환 탭 */
+        .main-tab-bar { display: flex; background: #ffffff; padding: 12px 16px 6px 16px; gap: 8px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
         .main-tab-bar::-webkit-scrollbar { display: none; }
         .tab-btn { flex: 1; padding: 10px 16px; border: none; background: #EDF2F7; border-radius: 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--text-sub); text-align: center; transition: all 0.25s cubic-bezier(0.1, 0.9, 0.2, 1); white-space: nowrap; }
         .tab-btn.active { background: var(--text-main); color: white; box-shadow: 0 4px 12px rgba(45, 52, 54, 0.2); transform: translateY(-1px); }
+
+        /* 서브 카테고리 필터 탭 (List 및 Day별 보기에서 활성화) */
+        .sub-filter-bar { display: flex; background: #ffffff; padding: 0 16px 12px 16px; gap: 6px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .sub-filter-bar::-webkit-scrollbar { display: none; }
+        .filter-chip { padding: 6px 12px; border: 1px solid var(--border-color); background: #F8FAFC; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--text-sub); white-space: nowrap; transition: 0.2s; }
+        .filter-chip.active { background: var(--primary-light); color: var(--primary); border-color: rgba(59, 130, 246, 0.3); font-weight: 700; }
 
         /* 햄버거 사이드 패널 (장소 등록/수정) */
         .side-panel { position: fixed; top: 0; left: -420px; width: 100%; max-width: 380px; height: 100%; background: white; z-index: 2000; transition: 0.35s cubic-bezier(0.1, 0.9, 0.2, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.1); overflow-y: auto; padding: 24px; }
@@ -76,7 +82,7 @@
         .list-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; }
         .sort-select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 12px; background: white; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; color: var(--text-main); }
 
-        /* 카드 디자인 계층 구조 최적화 */
+        /* 카드 디자인 */
         .card-item { background: white; padding: 18px; border-radius: 20px; margin-bottom: 14px; box-shadow: var(--card-shadow); display: flex; gap: 16px; align-items: flex-start; border: 1px solid rgba(0,0,0,0.02); transition: 0.2s; }
         .card-item:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -8px rgba(0,0,0,0.08); }
 
@@ -121,7 +127,7 @@
         .check-item.checked span { text-decoration: line-through; color: #CBD5E1; }
         .delete-check-btn { background: none; border: none; color: #EF4444; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
 
-        /* 빈 화면 감성 일러스트 스타일 (Empty State) */
+        /* 빈 화면 감성 일러스트 스타일 */
         .empty-state { text-align: center; padding: 50px 20px; color: var(--text-sub); background: white; border-radius: 20px; box-shadow: var(--card-shadow); }
         .empty-icon { font-size: 42px; margin-bottom: 12px; display: inline-block; animation: float 3s ease-in-out infinite; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
@@ -144,6 +150,15 @@
         <button class="tab-btn" onclick="changeMainTab('Day 2')">Day 2</button>
         <button class="tab-btn" onclick="changeMainTab('Day 3')">Day 3</button>
         <button class="tab-btn" onclick="changeMainTab('Checklist')">준비물</button>
+    </div>
+
+    <!-- 서브 카테고리 필터 탭 -->
+    <div id="subFilterBar" class="sub-filter-bar">
+        <button class="filter-chip active" onclick="changeCategoryFilter('all')">✨ 전체보기</button>
+        <button class="filter-chip" onclick="changeCategoryFilter('lodging')">🏠 숙소</button>
+        <button class="filter-chip" onclick="changeCategoryFilter('restaurant')">🥢 음식점</button>
+        <button class="filter-chip" onclick="changeCategoryFilter('cafe')">☕ 카페</button>
+        <button class="filter-chip" onclick="changeCategoryFilter('tour')">🌴 관광지</button>
     </div>
 
     <!-- 햄버거 메뉴 패널 (장소 등록/수정) -->
@@ -219,7 +234,6 @@
                 </div>
             </div>
 
-            <!-- 운영 정보 및 주차 정보 -->
             <div class="form-group">
                 <label>운영 시간 (영업 시작 ~ 종료)</label>
                 <div class="time-picker-row">
@@ -291,9 +305,6 @@
     </main>
 
     <script>
-        // ==========================================
-        // 🛠️ 파이어베이스 프로젝트 정보 연동 완료
-        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCqzu-A6-woxTIStlwXOXk3N5hT0WrVa14",
             authDomain: "jeju-trip-3dd23.firebaseapp.com",
@@ -305,7 +316,6 @@
             measurementId: "G-9E3M0372M6"
         };
 
-        // 파이어베이스 초기화
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -321,7 +331,8 @@
         ];
         let markers = [];
         let currentTab = 'List';
-        let currentMember = '지현'; // 준비물 탭에서 선택된 가족 멤버
+        let currentCategoryFilter = 'all'; // 카테고리 필터 상태
+        let currentMember = '지현'; 
         let geocoder;
         let placesService;
         const FAMILY_MEMBERS = ['지현', '지숙', '연정', '미경', '유리', '주은'];
@@ -337,7 +348,6 @@
             geocoder = new google.maps.Geocoder();
             placesService = new google.maps.places.PlacesService(map);
 
-            // 실시간 장소 목록 동기화
             db.collection("jeju_places").onSnapshot((snapshot) => {
                 places = [];
                 snapshot.forEach((doc) => {
@@ -346,7 +356,6 @@
                 renderPlaces();
             });
 
-            // 실시간 체크리스트 동기화
             db.collection("jeju_trip_data").doc("checklist_state").onSnapshot((doc) => {
                 if (doc.exists) {
                     checklist = doc.data().items || checklist;
@@ -432,15 +441,18 @@
             const mapContainer = document.getElementById('mapContainer');
             const topAddBtn = document.getElementById('topAddBtn');
             const sortSelectContainer = document.querySelector('.list-controls');
+            const subFilterBar = document.getElementById('subFilterBar');
 
             if (tab === 'Checklist') {
                 mapContainer.style.display = 'none';
                 topAddBtn.style.display = 'none';
                 sortSelectContainer.style.display = 'none';
+                subFilterBar.style.display = 'none';
                 document.getElementById('currentListTitle').innerHTML = `<span>✈️ 가족별 제주 여행 준비물</span>`;
             } else {
                 mapContainer.style.display = 'block';
                 topAddBtn.style.display = 'block';
+                subFilterBar.style.display = 'flex';
                 if (tab === 'List') {
                     sortSelectContainer.style.display = 'flex';
                 } else {
@@ -449,6 +461,19 @@
                 document.getElementById('currentListTitle').innerHTML = `<span>${tab === 'List' ? '전체 장소 리스트' : tab + ' 상세 일정'}</span>`;
             }
 
+            renderPlaces();
+        }
+
+        function changeCategoryFilter(cat) {
+            currentCategoryFilter = cat;
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                const onclickAttr = chip.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes(`'${cat}'`)) {
+                    chip.classList.add('active');
+                } else {
+                    chip.classList.remove('active');
+                }
+            });
             renderPlaces();
         }
 
@@ -607,7 +632,13 @@
                 return;
             }
 
+            // 1단계: 탭 기준 필터링 (List 또는 Day별)
             let filteredPlaces = (currentTab === 'List') ? [...places] : places.filter(p => p.schedule === currentTab);
+
+            // 2단계: 서브 카테고리 필터링 (숙소, 음식점, 카페, 관광지)
+            if (currentCategoryFilter !== 'all') {
+                filteredPlaces = filteredPlaces.filter(p => p.category === currentCategoryFilter);
+            }
 
             if (currentTab === 'List') {
                 const sortType = document.getElementById('sortSelect').value;
@@ -671,7 +702,7 @@
                 }).join('');
 
                 let orderControlHtml = '';
-                if (currentTab !== 'List') {
+                if (currentTab !== 'List' && currentCategoryFilter === 'all') {
                     orderControlHtml = `
                         <div class="card-actions-left">
                             <span style="font-weight:700; color:var(--primary);">#${index + 1}</span>
@@ -726,7 +757,7 @@
                 }
             });
 
-            if (currentTab !== 'List') {
+            if (currentTab !== 'List' && currentCategoryFilter === 'all') {
                 const allLodgings = places.filter(p => p.category === 'lodging' && p.schedule !== currentTab && p.lat && p.lng);
                 allLodgings.forEach(l => {
                     const markerIcon = createCustomPin('lodging', '🏠');
@@ -744,8 +775,8 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">🌴</div>
-                        <div style="font-weight: 700; font-size: 1rem; color: var(--text-main); margin-bottom: 4px;">아직 등록된 장소가 없어요</div>
-                        <div style="font-size: 0.85rem; color: var(--text-sub);">우측 상단 <b>'+ 장소추가'</b> 버튼을 눌러 일정을 채워보세요!</div>
+                        <div style="font-weight: 700; font-size: 1rem; color: var(--text-main); margin-bottom: 4px;">해당하는 장소가 없어요</div>
+                        <div style="font-size: 0.85rem; color: var(--text-sub);">다른 카테고리를 선택하거나 장소를 추가해 보세요!</div>
                     </div>
                 `;
             }
