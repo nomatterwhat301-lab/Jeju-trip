@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 가족 제주도 여행🌴</title>
-    <!-- 구글 지도 API 로드 (본인의 API 키가 들어가 있는 상태 유지) -->
+    <!-- 구글 지도 API 로드 -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAndcXXxmTbZO-HkdFfOuQyl5MniHISmKs&libraries=places&language=ko"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -17,9 +17,9 @@
         header h1 { font-size: 1.1rem; }
         .add-place-trigger { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
 
-        /* 메인 일정 탭 바 (Day 1, 2, 3 전환) */
-        .main-tab-bar { display: flex; background: white; padding: 10px 16px; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .tab-btn { flex: 1; padding: 10px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; color: #666; text-align: center; transition: 0.2s; }
+        /* 메인 일정 탭 바 (List, Day 1, Day 2, Day 3, Checklist) */
+        .main-tab-bar { display: flex; background: white; padding: 10px 16px; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-shrink: 0; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 8px 10px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; color: #666; text-align: center; transition: 0.2s; white-space: nowrap; }
         .tab-btn.active { background: #007aff; color: white; border-color: #007aff; }
 
         /* 햄버거 사이드 패널 (장소 등록/수정) */
@@ -46,13 +46,28 @@
 
         /* 메인 화면 및 지도 */
         main { width: 100%; max-width: 800px; margin: 0 auto; padding: 12px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-        #map { width: 100%; height: 42vh; min-height: 280px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: #e5e3df; flex-shrink: 0; }
+        #mapContainer { flex-shrink: 0; }
+        #map { width: 100%; height: 42vh; min-height: 280px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: #e5e3df; }
 
         .place-list-view h2 { font-size: 1rem; margin-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
-        .card-item { background: white; padding: 14px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        
+        /* 카드 디자인 및 카테고리별 테두리/배경색 */
+        .card-item { background: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; gap: 12px; align-items: flex-start; border-left: 6px solid #ccc; }
+        .card-item.lodging { border-left-color: #2196f3; background-color: #f4f8fb; }
+        .card-item.restaurant { border-left-color: #ff9800; background-color: #fcf8f4; }
+        .card-item.cafe { border-left-color: #795548; background-color: #f8f6f5; }
+        .card-item.tour { border-left-color: #4caf50; background-color: #f4f8f4; }
+
+        .place-thumb { width: 75px; height: 75px; border-radius: 8px; object-fit: cover; background: #e0e0e0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #666; text-align: center; }
+        .card-body { flex: 1; }
         .card-item h3 { font-size: 0.95rem; margin-bottom: 6px; display: flex; justify-content: space-between; }
         .card-actions { display: flex; gap: 12px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; font-size: 0.8rem; }
         .card-actions button { background: none; border: none; color: #007aff; cursor: pointer; font-weight: bold; }
+
+        /* 체크리스트 스타일 */
+        .checklist-container { background: white; padding: 16px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        .check-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -67,9 +82,11 @@
 
     <!-- 메인 일정 전환 탭 -->
     <div class="main-tab-bar">
-        <button class="tab-btn active" onclick="changeMainTab('Day 1')">Day 1</button>
+        <button class="tab-btn active" onclick="changeMainTab('List')">List (전체)</button>
+        <button class="tab-btn" onclick="changeMainTab('Day 1')">Day 1</button>
         <button class="tab-btn" onclick="changeMainTab('Day 2')">Day 2</button>
         <button class="tab-btn" onclick="changeMainTab('Day 3')">Day 3</button>
+        <button class="tab-btn" onclick="changeMainTab('Checklist')">여행 준비물</button>
     </div>
 
     <!-- 햄버거 메뉴 패널 (장소 등록/수정) -->
@@ -80,7 +97,6 @@
         </div>
         
         <form id="placeForm" class="panel-form">
-            <!-- 일정 선택 -->
             <div class="form-group">
                 <label>일정</label>
                 <div class="btn-select-group" id="scheduleGroup">
@@ -91,7 +107,6 @@
                 <input type="hidden" id="selectedSchedule" value="Day 1">
             </div>
 
-            <!-- 카테고리 선택 -->
             <div class="form-group">
                 <label>카테고리</label>
                 <div class="btn-select-group" id="categoryGroup">
@@ -103,7 +118,6 @@
                 <input type="hidden" id="selectedCategory" value="lodging">
             </div>
 
-            <!-- Pick한 사람 -->
             <div class="form-group">
                 <label>Pick한 사람</label>
                 <div class="tag-select-group" id="pickerGroup">
@@ -117,7 +131,6 @@
                 <input type="hidden" id="selectedPicker" value="유리">
             </div>
 
-            <!-- 장소 및 도로명 주소 검색 -->
             <div class="form-group">
                 <label>장소명 또는 도로명 주소 검색</label>
                 <div class="search-row">
@@ -131,15 +144,14 @@
                 <input type="text" id="placeName" placeholder="검색 후 자동으로 채워집니다" required>
                 <input type="hidden" id="lat">
                 <input type="hidden" id="lng">
+                <input type="hidden" id="photoUrl">
             </div>
 
-            <!-- 별점 -->
             <div class="form-group">
                 <label>별점 (1 ~ 5)</label>
                 <input type="number" id="rating" min="1" max="5" step="0.5" value="5">
             </div>
 
-            <!-- 예약 방법 -->
             <div class="form-group">
                 <label>예약 방법</label>
                 <div class="checkbox-group">
@@ -150,7 +162,6 @@
                 </div>
             </div>
 
-            <!-- 운영 정보 -->
             <div class="form-group">
                 <label>운영 정보</label>
                 <input type="text" id="hours" placeholder="운영 시간 (예: 10:00 ~ 20:00)">
@@ -158,7 +169,6 @@
                 <input type="text" id="closedDay" placeholder="휴무 여부">
             </div>
 
-            <!-- 케어키즈존 / 노키즈존 선택 -->
             <div class="form-group">
                 <label>키즈존 여부</label>
                 <div class="radio-group">
@@ -167,7 +177,6 @@
                 </div>
             </div>
 
-            <!-- 가족 투표 -->
             <div class="form-group">
                 <label>가족 투표</label>
                 <div class="tag-select-group" id="votersGroup">
@@ -180,7 +189,6 @@
                 </div>
             </div>
 
-            <!-- 메모 -->
             <div class="form-group">
                 <label>메모</label>
                 <textarea id="memo" placeholder="가족들에게 남길 메모"></textarea>
@@ -192,9 +200,11 @@
 
     <!-- 메인 화면 -->
     <main>
-        <div id="map"></div>
+        <div id="mapContainer">
+            <div id="map"></div>
+        </div>
         <div id="placeListContainer" class="place-list-view">
-            <h2 id="currentListTitle"><span>Day 1 픽한 장소들</span></h2>
+            <h2 id="currentListTitle"><span>전체 장소 리스트</span></h2>
             <div id="cardsList"></div>
         </div>
     </main>
@@ -203,7 +213,7 @@
         let map;
         let places = JSON.parse(localStorage.getItem('jeju_places')) || [];
         let markers = [];
-        let currentTab = 'Day 1';
+        let currentTab = 'List';
         let geocoder;
         let placesService;
 
@@ -218,7 +228,6 @@
             renderPlaces();
         };
 
-        // 장소명 및 도로명 주소 검색 통합 처리
         function searchGooglePlace() {
             const query = document.getElementById('searchInput').value;
             if (!query.trim()) {
@@ -228,7 +237,7 @@
 
             const request = {
                 query: query,
-                fields: ['name', 'geometry', 'formatted_address']
+                fields: ['name', 'geometry', 'formatted_address', 'photos']
             };
 
             placesService.findPlaceFromQuery(request, function(results, status) {
@@ -236,6 +245,10 @@
                     const place = results[0];
                     const lat = place.geometry.location.lat();
                     const lng = place.geometry.location.lng();
+                    let photoUrl = '';
+                    if (place.photos && place.photos.length > 0) {
+                        photoUrl = place.photos[0].getUrl({ maxWidth: 200, maxHeight: 200 });
+                    }
 
                     map.setCenter({ lat, lng });
                     map.setZoom(15);
@@ -243,10 +256,10 @@
                     document.getElementById('placeName').value = place.name;
                     document.getElementById('lat').value = lat;
                     document.getElementById('lng').value = lng;
+                    document.getElementById('photoUrl').value = photoUrl;
 
                     alert(`"${place.name}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
                 } else {
-                    // 장소 검색 결과가 없으면 도로명 주소(Geocoding)로 재검색
                     geocoder.geocode({ address: query }, function(results, status) {
                         if (status === 'OK' && results[0]) {
                             const lat = results[0].geometry.location.lat();
@@ -255,10 +268,10 @@
                             map.setCenter({ lat, lng });
                             map.setZoom(15);
 
-                            // 주소로 검색한 경우 포맷된 주소나 입력값을 장소 이름으로 활용
                             document.getElementById('placeName').value = query;
                             document.getElementById('lat').value = lat;
                             document.getElementById('lng').value = lng;
+                            document.getElementById('photoUrl').value = '';
 
                             alert(`"${query}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
                         } else {
@@ -269,13 +282,25 @@
             });
         }
 
-        function changeMainTab(day) {
-            currentTab = day;
+        function changeMainTab(tab) {
+            currentTab = tab;
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                if (btn.innerText.includes(day)) btn.classList.add('active');
-                else btn.classList.remove('active');
+                if (btn.innerText.includes(tab) || (tab === 'List' && btn.innerText.includes('List'))) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
             });
-            document.getElementById('currentListTitle').innerHTML = `<span>${day} 픽한 장소들</span>`;
+
+            const mapContainer = document.getElementById('mapContainer');
+            if (tab === 'Checklist') {
+                mapContainer.style.display = 'none';
+                document.getElementById('currentListTitle.innerHTML') = '';
+            } else {
+                mapContainer.style.display = 'block';
+            }
+
+            document.getElementById('currentListTitle').innerHTML = `<span>${tab === 'List' ? '전체 장소 리스트' : tab + ' 픽한 장소들'}</span>`;
             renderPlaces();
         }
 
@@ -287,7 +312,9 @@
             document.getElementById('placeForm').reset();
             delete document.getElementById('placeForm').dataset.editId;
             document.getElementById('panelTitle').innerText = '장소 선택 및 등록';
-            setActiveButtonByValue('scheduleGroup', 'selectedSchedule', currentTab);
+            if (currentTab !== 'List' && currentTab !== 'Checklist') {
+                setActiveButtonByValue('scheduleGroup', 'selectedSchedule', currentTab);
+            }
             sidePanel.classList.add('active');
         }
 
@@ -331,21 +358,16 @@
             return '📍';
         }
 
-        // 두 좌표 간의 거리 계산 (단위: km) 후 대략적인 소요 시간 산출 (시속 40km 기준)
         function calculateTravelTime(lat1, lon1, lat2, lon2) {
-            const R = 6371; // 지구 반지름(km)
+            const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                       Math.sin(dLon/2) * Math.sin(dLon/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            const distance = R * c; // km 거리
-            
-            // 제주도 평균 주행 속도(시속 약 40km) 감안하여 시간 계산
-            const hours = distance / 40;
-            const minutes = Math.round(hours * 60);
-            
+            const distance = R * c;
+            const minutes = Math.round((distance / 40) * 60);
             if (minutes < 5) return "약 5분 이내";
             return `약 ${minutes}분 소요 (${distance.toFixed(1)}km)`;
         }
@@ -358,20 +380,36 @@
             markers.forEach(m => m.setMap(null));
             markers = [];
 
-            const filteredPlaces = places.filter(p => p.schedule === currentTab);
+            // Checklist 탭인 경우
+            if (currentTab === 'Checklist') {
+                container.innerHTML = `
+                    <div class="checklist-container">
+                        <h3 style="margin-bottom: 12px; font-size: 1rem; color: #007aff;">✈️ 제주 여행 필수 준비물</h3>
+                        <div class="check-item"><input type="checkbox"> 신분증 / 운전면허증 (탑승 수속 필수)</div>
+                        <div class="check-item"><input type="checkbox"> 보조배터리 및 충전기</div>
+                        <div class="check-item"><input type="checkbox"> 상비약 (소화제, 두통약, 멀미약)</div>
+                        <div class="check-item"><input type="checkbox"> 선글라스, 모자, 자외선 차단제</div>
+                        <div class="check-item"><input type="checkbox"> 편한 운동화 및 여분 옷</div>
+                        <div class="check-item"><input type="checkbox"> 렌트카 예약 확인 및 카시트 확인</div>
+                    </div>
+                `;
+                return;
+            }
 
-            // 해당 Day의 숙소 찾기 (기준점)
-            const lodgingPlace = filteredPlaces.find(p => p.category === 'lodging');
+            const filteredPlaces = (currentTab === 'List') ? places : places.filter(p => p.schedule === currentTab);
 
             if (filteredPlaces.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:30px; color:#888; font-size:0.85rem; background:white; border-radius:8px;">${currentTab}에 등록된 장소가 없습니다.<br>우측 상단 '+ 장소추가' 버튼을 눌러 등록해보세요!</div>`;
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:#888; font-size:0.85rem; background:white; border-radius:8px;">등록된 장소가 없습니다.<br>우측 상단 '+ 장소추가' 버튼을 눌러 등록해보세요!</div>`;
                 return;
             }
 
             filteredPlaces.forEach(p => {
                 const emoji = getEmoji(p.category);
                 
-                // 숙소로부터의 소요 시간 계산 텍스트 생성
+                // 해당 일정의 숙소 찾기 (거리 계산용)
+                const dayPlaces = places.filter(item => item.schedule === p.schedule);
+                const lodgingPlace = dayPlaces.find(item => item.category === 'lodging');
+
                 let travelInfo = "숙소를 먼저 등록해주세요!";
                 if (lodgingPlace) {
                     if (p.id === lodgingPlace.id) {
@@ -381,28 +419,31 @@
                     }
                 }
 
-                // 키즈존 텍스트 정리
                 const kidsText = p.noKids === 'no_kids' ? '🚫 No Kids (노키즈)' : '👶 Yes Kids (케어키즈)';
+                const thumbHtml = p.photoUrl ? `<img src="${p.photoUrl}" class="place-thumb">` : `<div class="place-thumb">${emoji} 사진없음</div>`;
 
                 const card = document.createElement('div');
-                card.className = 'card-item';
+                card.className = `card-item ${p.category}`;
                 card.innerHTML = `
-                    <h3><span>${emoji} ${p.name}</span> <span style="font-size:0.75rem; color:#007aff; font-weight:bold;">${p.schedule}</span></h3>
-                    <div style="font-size:0.8rem; color:#555; line-height:1.5;">
-                        ⭐ ${p.rating}점 | Pick: <b>${p.picker}</b><br>
-                        🚗 숙소에서 이동: <b style="color:#007aff;">${travelInfo}</b><br>
-                        예약: ${p.reservation || '없음'} | ${kidsText}<br>
-                        메모: ${p.memo || '없음'}<br>
-                        ❤️ 투표: ${(p.voters || []).join(', ') || '없음'}
-                    </div>
-                    <div class="card-actions">
-                        <button onclick="editPlace(${p.id})">수정</button>
-                        <button onclick="deletePlace(${p.id})" style="color:#ff3b30;">삭제</button>
+                    ${thumbHtml}
+                    <div class="card-body">
+                        <h3><span>${emoji} ${p.name}</span> <span style="font-size:0.75rem; color:#007aff; font-weight:bold;">${p.schedule}</span></h3>
+                        <div style="font-size:0.8rem; color:#555; line-height:1.5;">
+                            ⭐ ${p.rating}점 | Pick: <b>${p.picker}</b><br>
+                            🚗 숙소에서 이동: <b style="color:#007aff;">${travelInfo}</b><br>
+                            예약: ${p.reservation || '없음'} | ${kidsText}<br>
+                            메모: ${p.memo || '없음'}<br>
+                            ❤️ 투표: ${(p.voters || []).join(', ') || '없음'}
+                        </div>
+                        <div class="card-actions">
+                            <button onclick="editPlace(${p.id})">수정</button>
+                            <button onclick="deletePlace(${p.id})" style="color:#ff3b30;">삭제</button>
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
 
-                if (p.lat && p.lng && map) {
+                if (p.lat && p.lng && map && currentTab !== 'List') {
                     const marker = new google.maps.Marker({
                         position: { lat: p.lat, lng: p.lng },
                         map: map
@@ -435,6 +476,7 @@
                 name: name,
                 lat: Number(lat),
                 lng: Number(lng),
+                photoUrl: document.getElementById('photoUrl').value,
                 rating: document.getElementById('rating').value,
                 reservation: resChecked.join(', '),
                 hours: document.getElementById('hours').value,
@@ -454,7 +496,7 @@
 
             localStorage.setItem('jeju_places', JSON.stringify(places));
             sidePanel.classList.remove('active');
-            changeMainTab(placeData.schedule);
+            changeMainTab(currentTab);
         };
 
         window.deletePlace = (id) => {
@@ -477,6 +519,7 @@
             document.getElementById('placeName').value = p.name;
             document.getElementById('lat').value = p.lat;
             document.getElementById('lng').value = p.lng;
+            document.getElementById('photoUrl').value = p.photoUrl || '';
             document.getElementById('searchInput').value = p.name;
             document.getElementById('rating').value = p.rating;
             document.getElementById('hours').value = p.hours;
@@ -484,7 +527,6 @@
             document.getElementById('closedDay').value = p.closedDay;
             document.getElementById('memo').value = p.memo;
 
-            // 노키즈/예스키즈 라디오 버튼 복원
             const noKidsRadio = document.querySelector(`input[name="noKids"][value="${p.noKids || 'yes_kids'}"]`);
             if (noKidsRadio) noKidsRadio.checked = true;
 
