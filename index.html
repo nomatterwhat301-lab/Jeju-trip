@@ -6,6 +6,9 @@
     <title>우리 가족 제주도 여행🌴</title>
     <!-- 구글 지도 API 로드 -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAndcXXxmTbZO-HkdFfOuQyl5MniHISmKs&libraries=places&language=ko"></script>
+    <!-- 파이어베이스 SDK (실시간 동기화용) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --primary: #FF6B6B;
@@ -66,8 +69,6 @@
         /* 메인 화면 컨테이너 */
         main { width: 100%; max-width: 768px; margin: 0 auto; padding: 16px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
         #mapContainer { flex-shrink: 0; }
-        
-        /* 지도에 부드러운 라운드 & 세련된 섀도우 적용 */
         #map { width: 100%; height: 35vh; min-height: 220px; border-radius: 20px; margin-bottom: 16px; box-shadow: var(--card-shadow); background: #e5e3df; border: 1px solid rgba(255,255,255,0.8); }
 
         .place-list-view h2 { font-size: 1.05rem; margin-bottom: 12px; color: var(--text-main); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
@@ -83,10 +84,8 @@
         .card-body { flex: 1; min-width: 0; }
         .card-item h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; color: var(--text-main); letter-spacing: -0.3px; }
         
-        /* 가독성을 높인 정보 텍스트 스타일 */
         .card-info-text { font-size: 0.85rem; color: var(--text-sub); line-height: 1.65; }
         .card-info-text b { color: var(--text-main); font-weight: 600; }
-        .info-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 
         /* 감성적인 투표 칩 스타일 */
         .card-quick-vote { margin-top: 12px; padding-top: 10px; border-top: 1px solid #F1F5F9; }
@@ -286,20 +285,27 @@
     </main>
 
     <script>
-        let map;
-        let places = JSON.parse(localStorage.getItem('jeju_places')) || [];
-        
-        ['Day 1', 'Day 2', 'Day 3', '미배정'].forEach(sched => {
-            let schedPlaces = places.filter(p => (p.schedule || '미배정') === sched);
-            schedPlaces.forEach((p, idx) => {
-                if (p.order === undefined) {
-                    p.order = idx;
-                }
-            });
-        });
-        localStorage.setItem('jeju_places', JSON.stringify(places));
+        // ==========================================
+        // 🛠️ 파이어베이스 프로젝트 정보 연동 완료
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqzu-A6-woxTIStlwXOXk3N5hT0WrVa14",
+            authDomain: "jeju-trip-3dd23.firebaseapp.com",
+            databaseURL: "https://jeju-trip-3dd23-default-rtdb.firebaseio.com",
+            projectId: "jeju-trip-3dd23",
+            storageBucket: "jeju-trip-3dd23.firebasestorage.app",
+            messagingSenderId: "647159148234",
+            appId: "1:647159148234:web:1780f7619ed3cc1a2a4e33",
+            measurementId: "G-9E3M0372M6"
+        };
 
-        let checklist = JSON.parse(localStorage.getItem('jeju_checklist')) || [
+        // 파이어베이스 초기화
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let map;
+        let places = [];
+        let checklist = [
             { id: 1, text: '신분증 / 운전면허증 (탑승 수속 필수)', checked: false },
             { id: 2, text: '보조배터리 및 충전기', checked: false },
             { id: 3, text: '상비약 (소화제, 두통약, 멀미약)', checked: false },
@@ -323,8 +329,30 @@
             });
             geocoder = new google.maps.Geocoder();
             placesService = new google.maps.places.PlacesService(map);
-            renderPlaces();
+
+            // 파이어베이스 실시간 데이터 수신 리스너 (누가 바꾸든 즉시 반영됨)
+            db.collection("jeju_trip_data").doc("trip_state").onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    places = data.places || [];
+                    checklist = data.checklist || checklist;
+                } else {
+                    // 최초 실행 시 기본 데이터 업로드
+                    saveDataToCloud();
+                }
+                renderPlaces();
+            });
         };
+
+        // 클라우드(파이어베이스)에 데이터 동기화 저장 함수
+        function saveDataToCloud() {
+            db.collection("jeju_trip_data").doc("trip_state").set({
+                places: places,
+                checklist: checklist
+            }).catch((error) => {
+                console.error("데이터 저장 실패: ", error);
+            });
+        }
 
         function searchGooglePlace() {
             const query = document.getElementById('searchInput').value;
@@ -459,14 +487,13 @@
             return '📍';
         }
 
-        /* 촌스러운 원색 대신 감성적이고 부드러운 파스텔 톤 핀 색상 적용 */
         function getCategoryStyle(cat) {
             switch(cat) {
-                case 'lodging': return { color: '#FF7675', emoji: '🏠' }; // 부드러운 코랄 핑크
-                case 'restaurant': return { color: '#FAB1A0', emoji: '🥢' }; // 따뜻한 피치 오렌지
-                case 'cafe': return { color: '#E1B12C', emoji: '☕' }; // 은은한 무드 브라운/골드
-                case 'tour': return { color: '#55EFC4', emoji: '🌴' }; // 싱그러운 민트 그린
-                default: return { color: '#74B9FF', emoji: '📍' }; // 스카이 블루
+                case 'lodging': return { color: '#FF7675', emoji: '🏠' };
+                case 'restaurant': return { color: '#FAB1A0', emoji: '🥢' };
+                case 'cafe': return { color: '#E1B12C', emoji: '☕' };
+                case 'tour': return { color: '#55EFC4', emoji: '🌴' };
+                default: return { color: '#74B9FF', emoji: '📍' };
             }
         }
 
@@ -511,8 +538,7 @@
                 place.voters.push(name);
             }
 
-            localStorage.setItem('jeju_places', JSON.stringify(places));
-            renderPlaces();
+            saveDataToCloud();
         };
 
         function renderPlaces() {
@@ -712,8 +738,7 @@
                 p.order = i;
             });
 
-            localStorage.setItem('jeju_places', JSON.stringify(places));
-            renderPlaces();
+            saveDataToCloud();
         };
 
         function addChecklistItem() {
@@ -721,23 +746,20 @@
             const text = input.value.trim();
             if (!text) return;
             checklist.push({ id: Date.now(), text: text, checked: false });
-            localStorage.setItem('jeju_checklist', JSON.stringify(checklist));
-            renderPlaces();
+            saveDataToCloud();
         }
 
         function toggleCheckItem(id) {
             const item = checklist.find(x => x.id === id);
             if (item) {
                 item.checked = !item.checked;
-                localStorage.setItem('jeju_checklist', JSON.stringify(checklist));
-                renderPlaces();
+                saveDataToCloud();
             }
         }
 
         function deleteCheckItem(id) {
             checklist = checklist.filter(x => x.id !== id);
-            localStorage.setItem('jeju_checklist', JSON.stringify(checklist));
-            renderPlaces();
+            saveDataToCloud();
         }
 
         document.getElementById('placeForm').onsubmit = (e) => {
@@ -808,16 +830,14 @@
                 places.push(placeData);
             }
 
-            localStorage.setItem('jeju_places', JSON.stringify(places));
+            saveDataToCloud();
             sidePanel.classList.remove('active');
-            changeMainTab(currentTab);
         };
 
         window.deletePlace = (id) => {
             if (confirm('정말 삭제하시겠습니까?')) {
                 places = places.filter(p => p.id !== id);
-                localStorage.setItem('jeju_places', JSON.stringify(places));
-                renderPlaces();
+                saveDataToCloud();
             }
         };
 
