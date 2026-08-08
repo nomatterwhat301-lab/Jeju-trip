@@ -1,23 +1,24 @@
 let map;
 let places = JSON.parse(localStorage.getItem('jeju_places')) || [];
 let markers = [];
-const ps = new kakao.maps.services.Places();
 
-// 지도 초기화
-function initMap() {
-    map = new kakao.maps.Map(document.getElementById('map'), {
-        center: new kakao.maps.LatLng(33.3819, 126.5592),
+// 카카오 지도 API 로드 후 실행
+kakao.maps.load(() => {
+    const container = document.getElementById('map');
+    const options = {
+        center: new kakao.maps.LatLng(33.3819, 126.5592), // 제주도 중심 좌표
         level: 9
-    });
+    };
+    map = new kakao.maps.Map(container, options);
     renderPlaces();
-}
+});
 
 // 햄버거 메뉴 열고 닫기
 const sidePanel = document.getElementById('sidePanel');
 document.getElementById('menuBtn').onclick = () => sidePanel.classList.add('active');
 document.getElementById('closeBtn').onclick = () => sidePanel.classList.remove('active');
 
-// 버튼형 선택 UI 로직 처리 (일정, 카테고리, 픽한사람, 투표)
+// 버튼형 선택 UI 로직 처리
 function setupButtonGroup(containerId, inputId, isMulti = false) {
     const buttons = document.querySelectorAll(`#${containerId} button`);
     buttons.forEach(btn => {
@@ -35,7 +36,7 @@ function setupButtonGroup(containerId, inputId, isMulti = false) {
 setupButtonGroup('scheduleGroup', 'selectedSchedule');
 setupButtonGroup('categoryGroup', 'selectedCategory');
 setupButtonGroup('pickerGroup', 'selectedPicker');
-setupButtonGroup('votersGroup', null, true); // 투표는 다중 선택 가능
+setupButtonGroup('votersGroup', null, true);
 
 // 카카오 키워드 검색
 function searchPlaceKeyword() {
@@ -44,6 +45,7 @@ function searchPlaceKeyword() {
         alert('검색어를 입력해주세요!');
         return;
     }
+    const ps = new kakao.maps.services.Places();
     ps.keywordSearch(keyword, (data, status) => {
         if (status === kakao.maps.services.Status.OK) {
             const coords = new kakao.maps.LatLng(data[0].y, data[0].x);
@@ -51,14 +53,14 @@ function searchPlaceKeyword() {
             document.getElementById('placeName').value = data[0].place_name;
             document.getElementById('lat').value = data[0].y;
             document.getElementById('lng').value = data[0].x;
-            alert(`"${data[0].place_name}" 위치를 불러왔습니다!`);
+            alert(`"${data[0].place_name}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
         } else {
             alert('검색 결과가 없습니다.');
         }
     });
 }
 
-// 숙소와의 거리 계산 (하바사인 공식)
+// 거리 계산 (하바사인 공식)
 function calcDistance(lat1, lon1, lat2, lon2) {
     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
     const R = 6371;
@@ -68,7 +70,6 @@ function calcDistance(lat1, lon1, lat2, lon2) {
     return (2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
 }
 
-// 카테고리별 이모지 매칭
 function getEmoji(cat) {
     if (cat === 'lodging') return '🏠';
     if (cat === 'restaurant') return '🥢';
@@ -77,10 +78,12 @@ function getEmoji(cat) {
     return '📍';
 }
 
-// 렌더링 및 마커 표시
+// 렌더링
 function renderPlaces() {
     const container = document.getElementById('cardsList');
+    if (!container) return;
     container.innerHTML = '';
+    
     markers.forEach(m => m.setMap(null));
     markers = [];
 
@@ -90,7 +93,6 @@ function renderPlaces() {
         const emoji = getEmoji(p.category);
         const dist = (lodging && p.category !== 'lodging') ? calcDistance(lodging.lat, lodging.lng, p.lat, p.lng) : null;
 
-        // 카드 UI
         const card = document.createElement('div');
         card.className = 'card-item';
         card.innerHTML = `
@@ -110,11 +112,10 @@ function renderPlaces() {
         `;
         container.appendChild(card);
 
-        // 지도 마커
         if (p.lat && p.lng) {
             const marker = new kakao.maps.CustomOverlay({
                 position: new kakao.maps.LatLng(p.lat, p.lng),
-                content: `<div style="background:white; padding:3px 8px; border-radius:12px; border:2px solid #007aff; font-size:11px; font-weight:bold;">${emoji} ${p.name}</div>`,
+                content: `<div style="background:white; padding:4px 8px; border-radius:12px; border:2px solid #007aff; font-size:11px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2);">${emoji} ${p.name}</div>`,
                 yAnchor: 1.5
             });
             marker.setMap(map);
@@ -123,7 +124,7 @@ function renderPlaces() {
     });
 }
 
-// 장소 저장 및 수정 처리
+// 저장
 document.getElementById('placeForm').onsubmit = (e) => {
     e.preventDefault();
     const name = document.getElementById('placeName').value;
@@ -131,13 +132,11 @@ document.getElementById('placeForm').onsubmit = (e) => {
     const lng = document.getElementById('lng').value;
 
     if (!lat || !lng) {
-        alert('장소 검색을 통해 지도 위치를 먼저 지정해주세요!');
+        alert('장소를 검색해서 위치를 먼저 지정해주세요!');
         return;
     }
 
-    // 체크박스 예약 수단 수집
     const resChecked = Array.from(document.querySelectorAll('input[name="res"]:checked')).map(el => el.value);
-    // 투표한 가족 수집
     const activeVoters = Array.from(document.querySelectorAll('#votersGroup .vote-tag.active')).map(el => el.dataset.name);
 
     const editId = document.getElementById('placeForm').dataset.editId;
@@ -197,5 +196,3 @@ window.editPlace = (id) => {
     document.getElementById('placeForm').dataset.editId = id;
     sidePanel.classList.add('active');
 };
-
-window.onload = initMap;
