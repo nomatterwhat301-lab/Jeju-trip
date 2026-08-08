@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 가족 제주도 여행🌴</title>
-    <!-- 카카오 맵 API 로드 (주소 검색 libraries=services 포함) -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
+    <!-- 구글 지도 API 로드 (발급받으신 API 키 적용 완료) -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAndcXXxmTbZO-HkdFfOuQyl5MniHISmKs&libraries=places&language=ko"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f0f2f5; color: #333; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
@@ -66,11 +66,11 @@
     </header>
 
     <!-- 메인 일정 전환 탭 -->
-    <div class="main-tab-bar">
+    <main-tab-bar class="main-tab-bar">
         <button class="tab-btn active" onclick="changeMainTab('Day 1')">Day 1</button>
         <button class="tab-btn" onclick="changeMainTab('Day 2')">Day 2</button>
         <button class="tab-btn" onclick="changeMainTab('Day 3')">Day 3</button>
-    </div>
+    </main-tab-bar>
 
     <!-- 햄버거 메뉴 패널 (장소 등록/수정) -->
     <aside id="sidePanel" class="side-panel">
@@ -117,12 +117,12 @@
                 <input type="hidden" id="selectedPicker" value="유리">
             </div>
 
-            <!-- 도로명 주소 또는 장소 검색 -->
+            <!-- 장소 검색 -->
             <div class="form-group">
-                <label>도로명 주소 / 장소 검색</label>
+                <label>구글 장소 검색</label>
                 <div class="search-row">
-                    <input type="text" id="searchInput" placeholder="예: 제주시 첨단로 242 또는 오설록">
-                    <button type="button" onclick="searchAddress()" class="sub-btn">주소검색</button>
+                    <input type="text" id="searchInput" placeholder="예: 오설록 티뮤지엄 또는 제주공항">
+                    <button type="button" onclick="searchGooglePlace()" class="sub-btn">위치찾기</button>
                 </div>
             </div>
 
@@ -205,58 +205,64 @@
         let markers = [];
         let currentTab = 'Day 1';
         let geocoder;
+        let placesService;
 
-        // 카카오 지도 초기화
+        // 구글 지도 초기화
         window.onload = function() {
-            const container = document.getElementById('map');
-            const options = {
-                center: new kakao.maps.LatLng(33.3819, 126.5592), // 제주도 중심 좌표
-                level: 9
-            };
-            map = new kakao.maps.Map(container, options);
-            geocoder = new kakao.maps.services.Geocoder();
+            const jejuCenter = { lat: 33.3819, lng: 126.5592 };
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: jejuCenter,
+                zoom: 10
+            });
+            geocoder = new google.maps.Geocoder();
+            placesService = new google.maps.places.PlacesService(map);
             renderPlaces();
         };
 
-        // 카카오 주소 및 키워드 검색 기능
-        function searchAddress() {
+        // 구글 장소 및 주소 검색 기능
+        function searchGooglePlace() {
             const query = document.getElementById('searchInput').value;
             if (!query.trim()) {
-                alert('도로명 주소나 장소명을 입력해주세요!');
+                alert('장소명이나 주소를 입력해주세요!');
                 return;
             }
 
-            // 먼저 키워드 검색 시도 (장소명 검색에 용이)
-            const ps = new kakao.maps.services.Places();
-            ps.keywordSearch(query, function(data, status) {
-                if (status === kakao.maps.services.Status.OK) {
-                    const place = data[0];
-                    const coords = new kakao.maps.LatLng(place.y, place.x);
+            const request = {
+                query: query,
+                fields: ['name', 'geometry', 'formatted_address']
+            };
 
-                    map.setCenter(coords);
-                    map.setLevel(3);
+            placesService.findPlaceFromQuery(request, function(results, status) {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+                    const place = results[0];
+                    const lat = place.geometry.location.lat();
+                    const lng = place.geometry.location.lng();
 
-                    document.getElementById('placeName').value = place.place_name;
-                    document.getElementById('lat').value = place.y;
-                    document.getElementById('lng').value = place.x;
+                    map.setCenter({ lat, lng });
+                    map.setZoom(15);
 
-                    alert(`"${place.place_name}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
+                    document.getElementById('placeName').value = place.name;
+                    document.getElementById('lat').value = lat;
+                    document.getElementById('lng').value = lng;
+
+                    alert(`"${place.name}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
                 } else {
-                    // 키워드 검색 실패 시 주소 검색 시도 (도로명 주소 검색용)
-                    geocoder.addressSearch(query, function(result, status) {
-                        if (status === kakao.maps.services.Status.OK) {
-                            const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+                    // 장소 검색 실패 시 일반 지오코딩 주소 검색 시도
+                    geocoder.geocode({ address: query }, function(results, status) {
+                        if (status === 'OK' && results[0]) {
+                            const lat = results[0].geometry.location.lat();
+                            const lng = results[0].geometry.location.lng();
 
-                            map.setCenter(coords);
-                            map.setLevel(3);
+                            map.setCenter({ lat, lng });
+                            map.setZoom(15);
 
                             document.getElementById('placeName').value = query;
-                            document.getElementById('lat').value = result[0].y;
-                            document.getElementById('lng').value = result[0].x;
+                            document.getElementById('lat').value = lat;
+                            document.getElementById('lng').value = lng;
 
-                            alert(`"${query}" 주소 위치를 찾았습니다! 저장하기를 눌러주세요.`);
+                            alert(`"${query}" 위치를 찾았습니다! 저장하기를 눌러주세요.`);
                         } else {
-                            alert('검색 결과가 없습니다. 도로명 주소나 장소명을 정확히 입력해 보세요.');
+                            alert('검색 결과가 없습니다. 명칭을 정확히 입력해 보세요.');
                         }
                     });
                 }
@@ -364,9 +370,8 @@
                 container.appendChild(card);
 
                 if (p.lat && p.lng && map) {
-                    const markerPosition = new kakao.maps.LatLng(p.lat, p.lng);
-                    const marker = new kakao.maps.Marker({
-                        position: markerPosition,
+                    const marker = new google.maps.Marker({
+                        position: { lat: p.lat, lng: p.lng },
                         map: map
                     });
                     markers.push(marker);
@@ -382,7 +387,7 @@
             const lng = document.getElementById('lng').value;
 
             if (!lat || !lng) {
-                alert('도로명 주소를 검색해서 위치를 먼저 지정해주세요!');
+                alert('장소를 검색해서 위치를 먼저 지정해주세요!');
                 return;
             }
 
