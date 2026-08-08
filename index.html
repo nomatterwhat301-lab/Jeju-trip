@@ -17,7 +17,7 @@
         header h1 { font-size: 1.1rem; }
         .add-place-trigger { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
 
-        /* 메인 일정 탭 바 (List, Day 1, Day 2, Day 3, Checklist) */
+        /* 메인 일정 탭 바 */
         .main-tab-bar { display: flex; background: white; padding: 10px 16px; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-shrink: 0; overflow-x: auto; }
         .tab-btn { flex: 1; padding: 8px 10px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; color: #666; text-align: center; transition: 0.2s; white-space: nowrap; }
         .tab-btn.active { background: #007aff; color: white; border-color: #007aff; }
@@ -44,14 +44,14 @@
         .checkbox-group, .radio-group { display: flex; gap: 12px; font-size: 0.85rem; align-items: center; flex-wrap: wrap; }
         .primary-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* 메인 화면 및 지도 */
+        /* 메인 화면 */
         main { width: 100%; max-width: 800px; margin: 0 auto; padding: 12px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
         #mapContainer { flex-shrink: 0; }
-        #map { width: 100%; height: 42vh; min-height: 280px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: #e5e3df; }
+        #map { width: 100%; height: 40vh; min-height: 250px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: #e5e3df; }
 
         .place-list-view h2 { font-size: 1rem; margin-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
         
-        /* 카드 디자인 및 카테고리별 테두리/배경색 */
+        /* 카드 디자인 (색상별 테두리) */
         .card-item { background: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; gap: 12px; align-items: flex-start; border-left: 6px solid #ccc; }
         .card-item.lodging { border-left-color: #2196f3; background-color: #f4f8fb; }
         .card-item.restaurant { border-left-color: #ff9800; background-color: #fcf8f4; }
@@ -64,10 +64,17 @@
         .card-actions { display: flex; gap: 12px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; font-size: 0.8rem; }
         .card-actions button { background: none; border: none; color: #007aff; cursor: pointer; font-weight: bold; }
 
-        /* 체크리스트 스타일 */
-        .checklist-container { background: white; padding: 16px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        /* 체크리스트 전용 스타일 */
+        .checklist-view { background: white; padding: 16px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .checklist-add-row { display: flex; gap: 8px; margin-bottom: 15px; }
+        .checklist-add-row input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
+        .checklist-add-row button { background: #34c759; color: white; border: none; padding: 0 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        .check-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        .check-item-left { display: flex; align-items: center; gap: 10px; }
         .check-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .check-item.checked span { text-decoration: line-through; color: #aaa; }
+        .delete-check-btn { background: none; border: none; color: #ff3b30; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -77,7 +84,7 @@
             <button id="menuBtn" class="menu-btn">☰</button>
             <h1>우리 가족 제주도 여행🌴</h1>
         </div>
-        <button class="add-place-trigger" onclick="openSidebarForAdd()">+ 장소추가</button>
+        <button id="topAddBtn" class="add-place-trigger" onclick="openSidebarForAdd()">+ 장소추가</button>
     </header>
 
     <!-- 메인 일정 전환 탭 -->
@@ -212,6 +219,14 @@
     <script>
         let map;
         let places = JSON.parse(localStorage.getItem('jeju_places')) || [];
+        let checklist = JSON.parse(localStorage.getItem('jeju_checklist')) || [
+            { id: 1, text: '신분증 / 운전면허증 (탑승 수속 필수)', checked: false },
+            { id: 2, text: '보조배터리 및 충전기', checked: false },
+            { id: 3, text: '상비약 (소화제, 두통약, 멀미약)', checked: false },
+            { id: 4, text: '선글라스, 모자, 자외선 차단제', checked: false },
+            { id: 5, text: '편한 운동화 및 여분 옷', checked: false },
+            { id: 6, text: '렌트카 예약 확인 및 카시트 확인', checked: false }
+        ];
         let markers = [];
         let currentTab = 'List';
         let geocoder;
@@ -293,14 +308,18 @@
             });
 
             const mapContainer = document.getElementById('mapContainer');
+            const topAddBtn = document.getElementById('topAddBtn');
+
             if (tab === 'Checklist') {
                 mapContainer.style.display = 'none';
-                document.getElementById('currentListTitle.innerHTML') = '';
+                topAddBtn.style.display = 'none'; // 준비물 탭에서는 장소추가 버튼 숨김
+                document.getElementById('currentListTitle').innerHTML = `<span>✈️ 제주 여행 필수 준비물</span>`;
             } else {
                 mapContainer.style.display = 'block';
+                topAddBtn.style.display = 'block';
+                document.getElementById('currentListTitle').innerHTML = `<span>${tab === 'List' ? '전체 장소 리스트' : tab + ' 픽한 장소들'}</span>`;
             }
 
-            document.getElementById('currentListTitle').innerHTML = `<span>${tab === 'List' ? '전체 장소 리스트' : tab + ' 픽한 장소들'}</span>`;
             renderPlaces();
         }
 
@@ -380,22 +399,35 @@
             markers.forEach(m => m.setMap(null));
             markers = [];
 
-            // Checklist 탭인 경우
+            // 1. Checklist 탭일 경우 전용 UI 렌더링
             if (currentTab === 'Checklist') {
-                container.innerHTML = `
-                    <div class="checklist-container">
-                        <h3 style="margin-bottom: 12px; font-size: 1rem; color: #007aff;">✈️ 제주 여행 필수 준비물</h3>
-                        <div class="check-item"><input type="checkbox"> 신분증 / 운전면허증 (탑승 수속 필수)</div>
-                        <div class="check-item"><input type="checkbox"> 보조배터리 및 충전기</div>
-                        <div class="check-item"><input type="checkbox"> 상비약 (소화제, 두통약, 멀미약)</div>
-                        <div class="check-item"><input type="checkbox"> 선글라스, 모자, 자외선 차단제</div>
-                        <div class="check-item"><input type="checkbox"> 편한 운동화 및 여분 옷</div>
-                        <div class="check-item"><input type="checkbox"> 렌트카 예약 확인 및 카시트 확인</div>
-                    </div>
+                let html = `
+                    <div class="checklist-view">
+                        <div class="checklist-add-row">
+                            <input type="text" id="newCheckItemText" placeholder="추가할 준비물을 입력하세요">
+                            <button onclick="addChecklistItem()">추가</button>
+                        </div>
+                        <div id="checkItemsContainer">
                 `;
+                
+                checklist.forEach((item, idx) => {
+                    html += `
+                        <div class="check-item ${item.checked ? 'checked' : ''}">
+                            <div class="check-item-left">
+                                <input type="checkbox" ${item.checked ? 'checked' : ''} onclick="toggleCheckItem(${item.id})">
+                                <span>${item.text}</span>
+                            </div>
+                            <button class="delete-check-btn" onclick="deleteCheckItem(${item.id})">삭제</button>
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+                container.innerHTML = html;
                 return;
             }
 
+            // 2. 장소 리스트 탭일 경우
             const filteredPlaces = (currentTab === 'List') ? places : places.filter(p => p.schedule === currentTab);
 
             if (filteredPlaces.length === 0) {
@@ -405,8 +437,6 @@
 
             filteredPlaces.forEach(p => {
                 const emoji = getEmoji(p.category);
-                
-                // 해당 일정의 숙소 찾기 (거리 계산용)
                 const dayPlaces = places.filter(item => item.schedule === p.schedule);
                 const lodgingPlace = dayPlaces.find(item => item.category === 'lodging');
 
@@ -451,6 +481,34 @@
                     markers.push(marker);
                 }
             });
+        }
+
+        // 체크리스트 추가/수정/삭제 함수들
+        function addChecklistItem() {
+            const input = document.getElementById('newCheckItemText');
+            const text = input.value.trim();
+            if (!text) {
+                alert('준비물 내용을 입력해주세요!');
+                return;
+            }
+            checklist.push({ id: Date.now(), text: text, checked: false });
+            localStorage.setItem('jeju_checklist', JSON.stringify(checklist));
+            renderPlaces();
+        }
+
+        function toggleCheckItem(id) {
+            const item = checklist.find(x => x.id === id);
+            if (item) {
+                item.checked = !item.checked;
+                localStorage.setItem('jeju_checklist', JSON.stringify(checklist));
+                renderPlaces();
+            }
+        }
+
+        function deleteCheckItem(id) {
+            checklist = checklist.filter(x => x.id !== id);
+            localStorage.setItem('jeju_checklist', JSON.stringify(checklist));
+            renderPlaces();
         }
 
         document.getElementById('placeForm').onsubmit = (e) => {
