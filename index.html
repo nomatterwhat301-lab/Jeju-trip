@@ -39,7 +39,7 @@
       overflow: hidden;
     }
     #sidebar {
-      width: 420px;
+      width: 400px;
       background: #ffffff;
       border-right: 1px solid #ddd;
       display: flex;
@@ -51,16 +51,15 @@
       flex: 1;
       height: 100%;
     }
-    .filter-container, .day-container {
-      padding: 8px 10px;
+    .filter-container {
+      padding: 10px;
       background: #f8f9fa;
       border-bottom: 1px solid #eee;
       display: flex;
       gap: 5px;
       flex-wrap: wrap;
-      align-items: center;
     }
-    .filter-btn, .day-btn {
+    .filter-btn {
       padding: 6px 12px;
       border: 1px solid #ccc;
       background: #fff;
@@ -69,10 +68,10 @@
       font-size: 0.85rem;
       transition: all 0.2s;
     }
-    .filter-btn.active, .day-btn.active {
-      background: #28a745;
+    .filter-btn.active {
+      background: #007bff;
       color: white;
-      border-color: #28a745;
+      border-color: #007bff;
     }
     #place-list {
       flex: 1;
@@ -87,7 +86,6 @@
       border: 1px solid #eaeaea;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
       transition: transform 0.1s;
-      cursor: pointer;
     }
     .card:hover {
       transform: translateY(-2px);
@@ -103,63 +101,21 @@
       color: #666;
       line-height: 1.4;
     }
-    .pick-btn {
-      background: #fff0f6;
-      border: 1px solid #ffdeeb;
-      color: #d63384;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 6px;
-    }
-    .pick-btn.picked {
-      background: #d63384;
-      color: white;
-    }
     .form-container {
       padding: 15px;
       background: #fff;
       border-top: 1px solid #ddd;
-      max-height: 45vh;
-      overflow-y: auto;
-    }
-    .form-container label {
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: #444;
-      display: block;
-      margin-top: 8px;
-      margin-bottom: 3px;
     }
     .form-container input, .form-container select, .form-container textarea {
       width: 100%;
       padding: 8px;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
       box-sizing: border-box;
       font-size: 0.9rem;
     }
-    .checkbox-group {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 8px;
-    }
-    .checkbox-group label {
-      font-weight: normal;
-      font-size: 0.85rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      cursor: pointer;
-      margin-top: 0;
-    }
-    .form-container button.submit-btn {
+    .form-container button {
       width: 100%;
       padding: 10px;
       background: #28a745;
@@ -168,9 +124,8 @@
       border-radius: 4px;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 10px;
     }
-    .form-container button.submit-btn:hover {
+    .form-container button:hover {
       background: #218838;
     }
   </style>
@@ -178,22 +133,12 @@
 <body>
 
   <header>
-    <span>🌴 제주도 가족 여행 지도 (2박 3일)</span>
+    <span>🌴 제주도 가족 여행 지도</span>
     <span style="font-size: 0.8rem; font-weight: normal;">실시간 동기화 모드</span>
   </header>
 
   <div class="main-container">
     <div id="sidebar">
-      <!-- 일정별 필터 -->
-      <div class="day-container">
-        <span style="font-size:0.85rem; font-weight:bold; color:#333;">일정:</span>
-        <button class="day-btn active" onclick="filterDay('전체')">전체</button>
-        <button class="day-btn" onclick="filterDay('1일차')">1일차</button>
-        <button class="day-btn" onclick="filterDay('2일차')">2일차</button>
-        <button class="day-btn" onclick="filterDay('3일차')">3일차</button>
-      </div>
-
-      <!-- 카테고리별 필터 -->
       <div class="filter-container">
         <button class="filter-btn active" onclick="filterCategory('전체')">전체</button>
         <button class="filter-btn" onclick="filterCategory('숙소')">숙소</button>
@@ -208,64 +153,21 @@
 
       <div class="form-container">
         <h3 style="margin-top:0; font-size:0.95rem;">새 장소 추가하기</h3>
-        
-        <label>장소명 *</label>
         <input type="text" id="input-name" placeholder="장소명">
-        
-        <label>주소 *</label>
         <input type="text" id="input-address" placeholder="주소 찾기 (클릭)" readonly onclick="execDaumPostcode()" style="cursor:pointer; background:#f9f9f9;">
-        
-        <div style="display:flex; gap:8px;">
-          <div style="flex:1;">
-            <label>카테고리</label>
-            <select id="input-category">
-              <option value="숙소">숙소</option>
-              <option value="음식점">음식점</option>
-              <option value="카페">카페</option>
-              <option value="관광지">관광지</option>
-            </select>
-          </div>
-          <div style="flex:1;">
-            <label>여행 일정</label>
-            <select id="input-day">
-              <option value="1일차">1일차</option>
-              <option value="2일차">2일차</option>
-              <option value="3일차">3일차</option>
-            </select>
-          </div>
-        </div>
-
-        <label>노키즈존 여부</label>
-        <select id="input-nokids">
-          <option value="No (예스키즈존)">No (예스키즈존 - 아이 동반 가능)</option>
-          <option value="Yes (노키즈존)">Yes (노키즈존 - 아이 동반 불가)</option>
+        <select id="input-category">
+          <option value="숙소">숙소</option>
+          <option value="음식점">음식점</option>
+          <option value="카페">카페</option>
+          <option value="관광지">관광지</option>
         </select>
-        
-        <label>정기 휴무일 선택</label>
-        <div class="checkbox-group">
-          <label><input type="checkbox" name="offday" value="월"> 월</label>
-          <label><input type="checkbox" name="offday" value="화"> 화</label>
-          <label><input type="checkbox" name="offday" value="수"> 수</label>
-          <label><input type="checkbox" name="offday" value="목"> 목</label>
-          <label><input type="checkbox" name="offday" value="금"> 금</label>
-          <label><input type="checkbox" name="offday" value="토"> 토</label>
-          <label><input type="checkbox" name="offday" value="일"> 일</label>
-          <label><input type="checkbox" name="offday" value="연중무휴"> 연중무휴</label>
-        </div>
-
-        <label>예약 가능 여부</label>
-        <input type="text" id="input-reservation" placeholder="예: 네이버 예약 필수">
-        
-        <label>브레이크 타임</label>
-        <input type="text" id="input-breaktime" placeholder="예: 15:00 ~ 17:00">
-        
-        <label>주차 정보</label>
-        <input type="text" id="input-parking" placeholder="예: 전용 주차장 있음">
-        
-        <label>메모</label>
+        <input type="text" id="input-nokids" placeholder="노키즈존 여부 (예: 예스키즈존 / 노키즈존)">
+        <input type="text" id="input-reservation" placeholder="예약 가능 여부 (예: 네이버 예약 필수)">
+        <input type="text" id="input-breaktime" placeholder="브레이크 타임 (예: 15:00 ~ 17:00)">
+        <input type="text" id="input-offday" placeholder="휴무일 (예: 매주 화요일 휴무)">
+        <input type="text" id="input-parking" placeholder="주차 정보 (예: 전용 주차장 있음)">
         <textarea id="input-memo" placeholder="메모 (특이사항 등)" rows="2"></textarea>
-        
-        <button class="submit-btn" onclick="addPlace()">장소 등록 및 실시간 공유</button>
+        <button onclick="addPlace()">장소 등록 및 실시간 공유</button>
       </div>
     </div>
 
@@ -291,12 +193,8 @@
     let markers = [];
     let allPlaces = [];
     let currentCategory = '전체';
-    let currentDay = '전체';
     let selectedLat = 33.3616;
     let selectedLng = 126.5292;
-
-    // 사용자 이름 (가족 구성원 이름 설정용)
-    const userName = "유리";
 
     function initMap() {
       map = L.map('map').setView([33.3616, 126.5292], 10);
@@ -323,11 +221,12 @@
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // 카카오 주소 검색 API 연동
+    // 카카오 주소 검색 API 연동 (간이 좌표 설정 포함)
     function execDaumPostcode() {
       new daum.Postcode({
         oncomplete: function(data) {
           document.getElementById('input-address').value = data.address;
+          // 주소를 위/경도로 변환하기 위해 임시로 제주 중심값 부여 (실제 운영시 Geocoding API 연결 가능)
           selectedLat = 33.3616 + (Math.random() - 0.5) * 0.2;
           selectedLng = 126.5292 + (Math.random() - 0.5) * 0.2;
         }
@@ -338,18 +237,10 @@
       const name = document.getElementById('input-name').value;
       const address = document.getElementById('input-address').value;
       const category = document.getElementById('input-category').value;
-      const day = document.getElementById('input-day').value;
       const noKids = document.getElementById('input-nokids').value;
-      
-      // 체크된 휴무일 수집
-      const checkedDays = [];
-      document.querySelectorAll('input[name="offday"]:checked').forEach(cb => {
-        checkedDays.push(cb.value);
-      });
-      const offDay = checkedDays.length > 0 ? checkedDays.join(', ') : "정보 없음";
-
       const reservation = document.getElementById('input-reservation').value;
       const breakTime = document.getElementById('input-breaktime').value;
+      const offDay = document.getElementById('input-offday').value;
       const parking = document.getElementById('input-parking').value;
       const memo = document.getElementById('input-memo').value;
 
@@ -359,10 +250,9 @@
       }
 
       const newPlace = {
-        name, address, category, day, noKids, offDay, reservation, breakTime, parking, memo,
+        name, address, category, noKids, reservation, breakTime, offDay, parking, memo,
         lat: selectedLat,
-        lng: selectedLng,
-        picks: {}
+        lng: selectedLng
       };
 
       db.ref('places').push(newPlace, (error) => {
@@ -370,41 +260,20 @@
           // 입력창 초기화
           document.getElementById('input-name').value = "";
           document.getElementById('input-address').value = "";
+          document.getElementById('input-nokids').value = "";
           document.getElementById('input-reservation').value = "";
           document.getElementById('input-breaktime').value = "";
+          document.getElementById('input-offday').value = "";
           document.getElementById('input-parking').value = "";
           document.getElementById('input-memo').value = "";
-          document.querySelectorAll('input[name="offday"]').forEach(cb => cb.checked = false);
-        }
-      });
-    }
-
-    // 찜하기(투표) 토글 함수
-    function togglePick(id, event) {
-      event.stopPropagation();
-      const placeRef = db.ref(`places/${id}/picks`);
-      placeRef.once('value', (snapshot) => {
-        const picks = snapshot.val() || {};
-        if (picks[userName]) {
-          db.ref(`places/${id}/picks/${userName}`).remove();
-        } else {
-          db.ref(`places/${id}/picks/${userName}`).set(true);
         }
       });
     }
 
     function filterCategory(category) {
       currentCategory = category;
-      document.querySelectorAll('.filter-container .filter-btn').forEach(btn => {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.toggle('active', btn.textContent === category);
-      });
-      renderPlaces();
-    }
-
-    function filterDay(day) {
-      currentDay = day;
-      document.querySelectorAll('.day-container .day-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent === day);
       });
       renderPlaces();
     }
@@ -417,22 +286,14 @@
       markers.forEach(marker => map.removeLayer(marker));
       markers = [];
 
-      const filtered = allPlaces.filter(p => {
-        const matchCat = (currentCategory === '전체' || p.category === currentCategory);
-        const matchDay = (currentDay === '전체' || p.day === currentDay);
-        return matchCat && matchDay;
-      });
+      const filtered = allPlaces.filter(p => currentCategory === '전체' || p.category === currentCategory);
 
       filtered.forEach(place => {
         const card = document.createElement("div");
         card.className = "card";
 
-        const picks = place.picks || {};
-        const pickNames = Object.keys(picks);
-        const isPickedByMe = picks[userName];
-
         card.innerHTML = `
-          <h3>${escapeHtml(place.name)} <span style="font-size:0.75rem; color:#007bff; font-weight:normal;">[${escapeHtml(place.category)}] [${escapeHtml(place.day || '1일차')}]</span></h3>
+          <h3>${escapeHtml(place.name)} <span style="font-size:0.75rem; color:#007bff; font-weight:normal;">[${escapeHtml(place.category)}]</span></h3>
           <div class="meta">
             ${escapeHtml(place.address)}<br>
             ${place.noKids ? "• 노키즈존: " + escapeHtml(place.noKids) + "<br>" : ""}
@@ -441,9 +302,6 @@
             ${place.offDay ? "• 휴무: " + escapeHtml(place.offDay) + "<br>" : ""}
             ${place.parking ? "• 주차: " + escapeHtml(place.parking) + "<br>" : ""}
             ${place.memo ? "• 메모: " + escapeHtml(place.memo) + "<br>" : ""}
-            <button class="pick-btn ${isPickedByMe ? 'picked' : ''}" onclick="togglePick('${place.id}', event)">
-              ❤️ 찜하기 (${pickNames.length}) ${pickNames.length > 0 ? ': ' + pickNames.join(', ') : ''}
-            </button>
           </div>
         `;
 
