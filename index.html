@@ -4,19 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 가족 제주도 여행🌴</title>
-    <!-- 카카오 지도 API (autoload 설정 제거로 안정성 확보) -->
+    <!-- 카카오 지도 API (libraries=services 필수) -->
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=49577ff7c6dd4420df5a86290f68d61c&libraries=services"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f0f2f5; color: #333; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
         /* 상단바 */
-        header { display: flex; align-items: center; background: #007aff; color: white; padding: 14px 16px; width: 100%; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
-        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 15px; }
+        header { display: flex; align-items: center; justify-content: space-between; background: #007aff; color: white; padding: 14px 16px; width: 100%; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
         header h1 { font-size: 1.1rem; }
+        .add-place-trigger { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
 
-        /* 햄버거 사이드 패널 */
-        .side-panel { position: fixed; top: 0; left: -360px; width: 340px; height: 100%; background: white; z-index: 2000; transition: 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.2); overflow-y: auto; padding: 20px; }
+        /* 메인 일정 탭 바 (Day 1, 2, 3 전환) */
+        .main-tab-bar { display: flex; background: white; padding: 10px 16px; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); flex-shrink: 0; }
+        .tab-btn { flex: 1; padding: 10px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; color: #666; text-align: center; transition: 0.2s; }
+        .tab-btn.active { background: #007aff; color: white; border-color: #007aff; }
+
+        /* 햄버거 사이드 패널 (장소 등록/수정) */
+        .side-panel { position: fixed; top: 0; left: -380px; width: 360px; height: 100%; background: white; z-index: 2000; transition: 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.2); overflow-y: auto; padding: 20px; }
         .side-panel.active { left: 0; }
         .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #666; }
@@ -38,27 +45,37 @@
         .primary-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
         /* 메인 화면 및 지도 */
-        main { width: 100%; max-width: 800px; margin: 0 auto; padding: 10px; flex: 1; display: flex; flex-direction: column; }
-        #map { width: 100%; height: 50vh; min-height: 350px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: #e5e3df; }
+        main { width: 100%; max-width: 800px; margin: 0 auto; padding: 12px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        #map { width: 100%; height: 42vh; min-height: 280px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: #e5e3df; flex-shrink: 0; }
 
-        .place-list-view h2 { font-size: 1rem; margin-bottom: 10px; }
-        .card-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .card-item h3 { font-size: 0.95rem; margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .card-actions { display: flex; gap: 10px; margin-top: 8px; border-top: 1px solid #eee; padding-top: 6px; font-size: 0.8rem; }
-        .card-actions button { background: none; border: none; color: #007aff; cursor: pointer; }
+        .place-list-view h2 { font-size: 1rem; margin-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
+        .card-item { background: white; padding: 14px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card-item h3 { font-size: 0.95rem; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .card-actions { display: flex; gap: 12px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px; font-size: 0.8rem; }
+        .card-actions button { background: none; border: none; color: #007aff; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
     <!-- 상단 타이틀 바 -->
     <header>
-        <button id="menuBtn" class="menu-btn">☰</button>
-        <h1>우리 가족 제주도 여행🌴</h1>
+        <div class="header-left">
+            <button id="menuBtn" class="menu-btn">☰</button>
+            <h1>우리 가족 제주도 여행🌴</h1>
+        </div>
+        <button class="add-place-trigger" onclick="openSidebarForAdd()">+ 장소추가</button>
     </header>
 
-    <!-- 햄버거 메뉴 패널 -->
+    <!-- 메인 일정 전환 탭 -->
+    <div class="main-tab-bar">
+        <button class="tab-btn active" onclick="changeMainTab('Day 1')">Day 1</button>
+        <button class="tab-btn" onclick="changeMainTab('Day 2')">Day 2</button>
+        <button class="tab-btn" onclick="changeMainTab('Day 3')">Day 3</button>
+    </div>
+
+    <!-- 햄버거 메뉴 패널 (장소 등록/수정 폼) -->
     <aside id="sidePanel" class="side-panel">
         <div class="panel-header">
-            <h2>장소 선택 및 등록</h2>
+            <h2 id="panelTitle">장소 선택 및 등록</h2>
             <button id="closeBtn" class="close-btn">&times;</button>
         </div>
         
@@ -67,11 +84,11 @@
             <div class="form-group">
                 <label>일정</label>
                 <div class="btn-select-group" id="scheduleGroup">
-                    <button type="button" class="sel-btn active" data-value="day1">Day 1</button>
-                    <button type="button" class="sel-btn" data-value="day2">Day 2</button>
-                    <button type="button" class="sel-btn" data-value="day3">Day 3</button>
+                    <button type="button" class="sel-btn active" data-value="Day 1">Day 1</button>
+                    <button type="button" class="sel-btn" data-value="Day 2">Day 2</button>
+                    <button type="button" class="sel-btn" data-value="Day 3">Day 3</button>
                 </div>
-                <input type="hidden" id="selectedSchedule" value="day1">
+                <input type="hidden" id="selectedSchedule" value="Day 1">
             </div>
 
             <!-- 카테고리 선택 -->
@@ -86,9 +103,9 @@
                 <input type="hidden" id="selectedCategory" value="lodging">
             </div>
 
-            <!-- 픽한 사람 -->
+            <!-- Pick한 사람 -->
             <div class="form-group">
-                <label>참여 가족 (Pick)</label>
+                <label>Pick한 사람</label>
                 <div class="tag-select-group" id="pickerGroup">
                     <button type="button" class="tag-btn" data-value="지현">지현</button>
                     <button type="button" class="tag-btn" data-value="지숙">지숙</button>
@@ -104,7 +121,7 @@
             <div class="form-group">
                 <label>장소 검색 (주소/명칭)</label>
                 <div class="search-row">
-                    <input type="text" id="searchInput" placeholder="예: 애월 카페, 흑돼지">
+                    <input type="text" id="searchInput" placeholder="예: 오설록, 애월 카페">
                     <button type="button" onclick="searchPlaceKeyword()" class="sub-btn">검색</button>
                 </div>
             </div>
@@ -177,7 +194,7 @@
     <main>
         <div id="map"></div>
         <div id="placeListContainer" class="place-list-view">
-            <h2>우리 가족 픽한 장소들</h2>
+            <h2 id="currentListTitle"><span>Day 1 픽한 장소들</span></h2>
             <div id="cardsList"></div>
         </div>
     </main>
@@ -186,22 +203,72 @@
         let map;
         let places = JSON.parse(localStorage.getItem('jeju_places')) || [];
         let markers = [];
+        let currentTab = 'Day 1';
 
-        // 페이지 로드 시 지도 생성
+        // 페이지 로드 시 카카오 지도 초기화 방어 로직
         window.onload = function() {
-            const container = document.getElementById('map');
-            const options = {
-                center: new kakao.maps.LatLng(33.3819, 126.5592), // 제주도 중심
-                level: 9
-            };
-            map = new kakao.maps.Map(container, options);
-            renderPlaces();
+            try {
+                if (typeof kakao === 'object' && kakao.maps) {
+                    kakao.maps.load(() => {
+                        const container = document.getElementById('map');
+                        const options = {
+                            center: new kakao.maps.LatLng(33.3819, 126.5592), // 제주도 중심 좌표
+                            level: 9
+                        };
+                        map = new kakao.maps.Map(container, options);
+                        renderPlaces();
+                    });
+                } else {
+                    showMapError('카카오 지도 스크립트를 불러오지 못했습니다.');
+                }
+            } catch (err) {
+                console.error(err);
+                showMapError('지도 초기화 중 오류가 발생했습니다.');
+            }
         };
 
-        // 햄버거 메뉴 제어
+        function showMapError(msg) {
+            document.getElementById('map').innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#d9534f;font-size:0.85rem;text-align:center;padding:20px;line-height:1.4;">${msg}<br>GitHub Pages 도메인 주소나 API Key를 다시 확인해주세요.</div>`;
+        }
+
+        // 상단 Day 탭 전환
+        function changeMainTab(day) {
+            currentTab = day;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.innerText.includes(day)) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            document.getElementById('currentListTitle').innerHTML = `<span>${day} 픽한 장소들</span>`;
+            renderPlaces();
+        }
+
+        // 햄버거 메뉴 및 추가버튼 제어
         const sidePanel = document.getElementById('sidePanel');
         document.getElementById('menuBtn').onclick = () => sidePanel.classList.add('active');
         document.getElementById('closeBtn').onclick = () => sidePanel.classList.remove('active');
+
+        function openSidebarForAdd() {
+            document.getElementById('placeForm').reset();
+            delete document.getElementById('placeForm').dataset.editId;
+            document.getElementById('panelTitle').innerText = '장소 선택 및 등록';
+            
+            // 현재 보고 있는 탭을 기본값으로 폼에 세팅
+            setActiveButtonByValue('scheduleGroup', 'selectedSchedule', currentTab);
+            sidePanel.classList.add('active');
+        }
+
+        function setActiveButtonByValue(containerId, inputId, val) {
+            const buttons = document.querySelectorAll(`#${containerId} button`);
+            buttons.forEach(btn => {
+                const bVal = btn.dataset.value || btn.dataset.name;
+                if (bVal === val) {
+                    btn.classList.add('active');
+                    document.getElementById(inputId).value = bVal;
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
 
         // 버튼 그룹 선택 UI 로직
         function setupButtonGroup(containerId, inputId, isMulti = false) {
@@ -223,11 +290,15 @@
         setupButtonGroup('pickerGroup', 'selectedPicker');
         setupButtonGroup('votersGroup', null, true);
 
-        // 카카오 장소 검색
+        // 카카오 장소 검색 기능
         function searchPlaceKeyword() {
             const keyword = document.getElementById('searchInput').value;
             if (!keyword.trim()) {
                 alert('검색어를 입력해주세요!');
+                return;
+            }
+            if (!map || !kakao.maps.services) {
+                alert('지도가 아직 준비되지 않았습니다.');
                 return;
             }
             const ps = new kakao.maps.services.Places();
@@ -245,7 +316,6 @@
             });
         }
 
-        // 이모지 반환
         function getEmoji(cat) {
             if (cat === 'lodging') return '🏠';
             if (cat === 'restaurant') return '🥢';
@@ -254,7 +324,7 @@
             return '📍';
         }
 
-        // 장소 목록 및 마커 렌더링
+        // 장소 목록 및 마커 렌더링 (현재 선택된 일정(Day)에 해당하는 항목만 필터링)
         function renderPlaces() {
             const container = document.getElementById('cardsList');
             if (!container) return;
@@ -263,15 +333,23 @@
             markers.forEach(m => m.setMap(null));
             markers = [];
 
-            places.forEach(p => {
+            // 현재 선택된 탭(Day)에 해당하는 장소만 필터링
+            const filteredPlaces = places.filter(p => p.schedule === currentTab);
+
+            if (filteredPlaces.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:#888; font-size:0.85rem; background:white; border-radius:8px;">${currentTab}에 등록된 장소가 없습니다.<br>우측 상단 '+ 장소추가' 버튼을 눌러 등록해보세요!</div>`;
+                return;
+            }
+
+            filteredPlaces.forEach(p => {
                 const emoji = getEmoji(p.category);
 
                 const card = document.createElement('div');
                 card.className = 'card-item';
                 card.innerHTML = `
-                    <h3><span>${emoji} ${p.name}</span> <span style="font-size:0.75rem; color:#888;">${p.schedule}</span></h3>
-                    <div style="font-size:0.8rem; color:#555; line-height:1.3;">
-                        ⭐ ${p.rating}점 | 픽: <b>${p.picker}</b><br>
+                    <h3><span>${emoji} ${p.name}</span> <span style="font-size:0.75rem; color:#007aff; font-weight:bold;">${p.schedule}</span></h3>
+                    <div style="font-size:0.8rem; color:#555; line-height:1.4;">
+                        ⭐ ${p.rating}점 | Pick한 사람: <b>${p.picker}</b><br>
                         예약: ${p.reservation || '없음'} | 노키즈: ${p.noKids === 'yes' ? '🚫 YES' : '✔️ NO'}<br>
                         메모: ${p.memo || '없음'}<br>
                         ❤️ 투표: ${(p.voters || []).join(', ') || '없음'}
@@ -283,7 +361,7 @@
                 `;
                 container.appendChild(card);
 
-                if (p.lat && p.lng) {
+                if (p.lat && p.lng && map) {
                     const marker = new kakao.maps.CustomOverlay({
                         position: new kakao.maps.LatLng(p.lat, p.lng),
                         content: `<div style="background:white; padding:4px 8px; border-radius:12px; border:2px solid #007aff; font-size:11px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2);">${emoji} ${p.name}</div>`,
@@ -330,17 +408,17 @@
             };
 
             if (editId) {
-                const idx = places.findIndex(p => p.id == editId);
+                const idx = places.findIndex(x => x.id == editId);
                 places[idx] = placeData;
-                delete document.getElementById('placeForm').dataset.editId;
             } else {
                 places.push(placeData);
             }
 
             localStorage.setItem('jeju_places', JSON.stringify(places));
             sidePanel.classList.remove('active');
-            document.getElementById('placeForm').reset();
-            renderPlaces();
+            
+            // 저장한 장소의 일정 탭으로 자동 이동해서 확인시켜주기
+            changeMainTab(placeData.schedule);
         };
 
         window.deletePlace = (id) => {
@@ -354,6 +432,11 @@
         window.editPlace = (id) => {
             const p = places.find(x => x.id === id);
             if (!p) return;
+
+            document.getElementById('panelTitle').innerText = '장소 수정하기';
+            setActiveButtonByValue('scheduleGroup', 'selectedSchedule', p.schedule);
+            setActiveButtonByValue('categoryGroup', 'selectedCategory', p.category);
+            setActiveButtonByValue('pickerGroup', 'selectedPicker', p.picker);
 
             document.getElementById('placeName').value = p.name;
             document.getElementById('lat').value = p.lat;
