@@ -11,8 +11,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
         :root {
-            --primary: #FF6B6B;
-            --primary-light: #FFF0F0;
+            --primary: #3B82F6;
+            --primary-light: #EFF6FF;
             --bg-color: #F4F6F8;
             --text-main: #2D3436;
             --text-sub: #636E72;
@@ -28,7 +28,7 @@
         .header-left { display: flex; align-items: center; gap: 12px; }
         .menu-btn { background: none; border: none; color: var(--text-main); font-size: 22px; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; }
         header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.5px; }
-        .add-place-trigger { background: var(--primary); border: none; color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.35); transition: 0.2s; }
+        .add-place-trigger { background: var(--primary); border: none; color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35); transition: 0.2s; }
         .add-place-trigger:active { transform: scale(0.95); }
 
         /* 메인 일정 전환 탭 (토스/애플 스타일 모던 캡슐) */
@@ -48,7 +48,7 @@
         .form-group { margin-bottom: 18px; }
         .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--text-main); }
         .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="time"], .form-group textarea, .form-group select { width: 100%; padding: 11px 14px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.9rem; background: #F8FAFC; transition: 0.2s; outline: none; }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.12); }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12); }
         .form-group textarea { height: 75px; resize: none; }
 
         .time-picker-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -63,7 +63,7 @@
 
         .checkbox-group, .radio-group { display: flex; gap: 16px; font-size: 0.9rem; align-items: center; flex-wrap: wrap; }
         .checkbox-group label, .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: 400; cursor: pointer; }
-        .primary-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.35); transition: 0.2s; }
+        .primary-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35); transition: 0.2s; }
         .primary-btn:active { transform: scale(0.98); }
 
         /* 메인 화면 컨테이너 */
@@ -92,7 +92,7 @@
         .quick-vote-title { font-size: 0.75rem; font-weight: 700; color: #94A3B8; margin-bottom: 6px; }
         .quick-voters-list { display: flex; flex-wrap: wrap; gap: 6px; }
         .quick-vote-chip { padding: 5px 12px; border: 1px solid var(--border-color); background: #F8FAFC; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: var(--text-sub); cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px; }
-        .quick-vote-chip.voted { background: var(--primary-light); color: var(--primary); border-color: rgba(255, 107, 107, 0.3); box-shadow: 0 2px 6px rgba(255,107,107,0.15); }
+        .quick-vote-chip.voted { background: var(--primary-light); color: var(--primary); border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 2px 6px rgba(59,130,246,0.15); }
 
         .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; border-top: 1px solid #F1F5F9; padding-top: 12px; font-size: 0.8rem; }
         .card-actions-left { display: flex; gap: 8px; align-items: center; }
@@ -107,7 +107,7 @@
         .member-tab-bar { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .member-tab-bar::-webkit-scrollbar { display: none; }
         .member-btn { padding: 8px 14px; border: 1px solid var(--border-color); border-radius: 12px; background: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; color: var(--text-sub); transition: 0.2s; }
-        .member-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px rgba(255,107,107,0.25); }
+        .member-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px rgba(59,130,246,0.25); }
 
         /* 체크리스트 스타일 */
         .checklist-view { background: white; padding: 20px; border-radius: 20px; box-shadow: var(--card-shadow); }
@@ -505,11 +505,11 @@
 
         function getCategoryStyle(cat) {
             switch(cat) {
-                case 'lodging': return { color: '#FF7675', emoji: '🏠' };
-                case 'restaurant': return { color: '#FAB1A0', emoji: '🥢' };
-                case 'cafe': return { color: '#E1B12C', emoji: '☕' };
-                case 'tour': return { color: '#55EFC4', emoji: '🌴' };
-                default: return { color: '#74B9FF', emoji: '📍' };
+                case 'lodging': return { color: '#3B82F6', emoji: '🏠' };
+                case 'restaurant': return { color: '#60A5FA', emoji: '🥢' };
+                case 'cafe': return { color: '#93C5FD', emoji: '☕' };
+                case 'tour': return { color: '#2563EB', emoji: '🌴' };
+                default: return { color: '#3B82F6', emoji: '📍' };
             }
         }
 
@@ -567,7 +567,6 @@
             markers = [];
 
             if (currentTab === 'Checklist') {
-                // 가족별 탭 HTML 생성
                 let memberTabsHtml = `<div class="member-tab-bar">`;
                 FAMILY_MEMBERS.forEach(member => {
                     const activeClass = (currentMember === member) ? 'active' : '';
@@ -585,7 +584,6 @@
                         <div id="checkItemsContainer">
                 `;
                 
-                // 현재 선택된 멤버의 준비물만 필터링
                 const myChecklist = checklist.filter(item => (item.owner || '지현') === currentMember);
 
                 if (myChecklist.length === 0) {
@@ -780,7 +778,6 @@
             const input = document.getElementById('newCheckItemText');
             const text = input.value.trim();
             if (!text) return;
-            // 현재 선택된 가족(currentMember)의 준비물로 자동 저장
             checklist.push({ id: Date.now(), text: text, checked: false, owner: currentMember });
             saveChecklistToCloud();
             input.value = '';
