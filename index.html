@@ -487,8 +487,9 @@
         document.getElementById('closeBtn').onclick = () => sidePanel.classList.remove('active');
 
         function openSidebarForAdd() {
-            document.getElementById('placeForm').reset();
-            delete document.getElementById('placeForm').dataset.editFirestoreId;
+            const form = document.getElementById('placeForm');
+            form.reset();
+            delete form.dataset.editFirestoreId;
             document.getElementById('panelTitle').innerText = '장소 등록';
             document.getElementById('selectedSchedule').value = (currentTab.startsWith('Day')) ? currentTab : '미배정';
             sidePanel.classList.add('active');
@@ -840,7 +841,9 @@
 
             const resChecked = Array.from(document.querySelectorAll('input[name="res"]:checked')).map(el => el.value);
             const selectedSchedule = document.getElementById('selectedSchedule').value;
-            const editFirestoreId = document.getElementById('placeForm').dataset.editFirestoreId;
+            
+            const formEl = document.getElementById('placeForm');
+            const editFirestoreId = formEl.dataset.editFirestoreId;
             
             const placeData = {
                 schedule: selectedSchedule,
@@ -865,6 +868,7 @@
             if (editFirestoreId) {
                 db.collection("jeju_places").doc(editFirestoreId).update(placeData)
                     .then(() => {
+                        delete formEl.dataset.editFirestoreId;
                         sidePanel.classList.remove('active');
                     })
                     .catch(err => alert("수정 실패: " + err.message));
